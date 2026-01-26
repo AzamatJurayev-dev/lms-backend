@@ -8,238 +8,164 @@ datasource db {
 }
 
 model User {
-  id            Int       @id @default(autoincrement())
-  username      String    @unique
-  firstName     String
-  lastName      String
-  middleName    String?
-  password      String
-  phoneNumbers  String[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id       Int    @id @default(autoincrement())
+  username String @unique
 
-  roleId        Int
-  role          Role      @relation(fields: [roleId], references: [id])
+  firstName  String?
+  lastName   String?
+  middleName String?
 
-  permissions   Permission[] @relation("UserPermissions")
+  password    String
+  phoneNumber String?
 
-  student       Student?
-  teacher       Teacher?
+  isActive          Boolean @default(true)
+  canChangePassword Boolean @default(true)
 
-  enrollments   Enrollment[]
-  certificates  Certificate[]
-  notifications Notification[]
-  activityLogs  ActivityLog[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roleId Int?
+  role   Role? @relation(fields: [roleId], references: [id])
+
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  student Student?
+  teacher Teacher?
+}
+
+model Company {
+  id Int @id @default(autoincrement())
+
+  name        String  @unique
+  code        String?
+  description String?
+
+  email   String?
+  phone   String?
+  address String?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  users User[]
 }
 
 model Role {
-  id        Int     @id @default(autoincrement())
-  name      String
-  code      String  @unique
-  isActive  Boolean @default(true)
+  id       Int     @id @default(autoincrement())
+  code     String  @unique
+  isActive Boolean @default(true)
+  isPublic Boolean @default(true)
 
-  users     User[]
+  permissions Permission[] @relation("RolePermissions")
+
+  users        User[]
+  translations RoleTranslation[]
+}
+
+model RoleTranslation {
+  id   Int    @id @default(autoincrement())
+  lang String
+  name String
+
+  roleId Int
+  role   Role @relation(fields: [roleId], references: [id])
+
+  @@unique([roleId, lang])
 }
 
 model Permission {
-  id        Int      @id @default(autoincrement())
+  id       Int          @id @default(autoincrement())
+  code     String       @unique
+  parentId Int?
+  parent   Permission?  @relation("PermissionTree", fields: [parentId], references: [id])
+  children Permission[] @relation("PermissionTree")
+
+  roles Role[] @relation("RolePermissions")
+
+  translations PermissionTranslation[]
+}
+
+model PermissionTranslation {
+  id   Int    @id @default(autoincrement())
+  lang String
+  name String
+
+  permissionId Int
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([permissionId, lang])
+}
+
+model Group {
+  id        Int        @id @default(autoincrement())
   name      String
-  code      String   @unique
-  isChecked Boolean  @default(false)
-
-  parentId  Int?
-  parent    Permission? @relation("PermissionTree", fields: [parentId], references: [id])
-  children  Permission[] @relation("PermissionTree")
-
-  users     User[]  @relation("UserPermissions")
+  teachers  Teacher[]
+  students  Student[]
+  schedules Schedule[] @relation("GroupSchedules")
 }
 
-model Course {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String
-  price       Decimal
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
+model Schedule {
+  id        Int      @id @default(autoincrement())
+  day       WeekDays
+  startTime DateTime
+  endTime   DateTime
 
-  teacherId   Int
-  teacher     User     @relation(fields: [teacherId], references: [id])
+  teacherId Int
+  teacher   Teacher @relation("TeacherSchedules", fields: [teacherId], references: [id])
 
-  lessons     Lesson[]
-  enrollments Enrollment[]
-  assignments Assignment[]
-  quizzes     Quiz[]
-  certificates Certificate[]
+  groupId Int
+  group   Group @relation("GroupSchedules", fields: [groupId], references: [id])
 }
 
-model Lesson {
-  id        Int    @id @default(autoincrement())
-  title     String
-  content   String
-  videoUrl  String?
-  order     Int
-
-  courseId  Int
-  course    Course @relation(fields: [courseId], references: [id])
-
-  attendance Attendance[]
+enum WeekDays {
+  monday
+  tuesday
+  wednesday
+  thursday
+  friday
+  saturday
+  sunday
 }
 
-model Enrollment {
-  id         Int      @id @default(autoincrement())
-  enrolledAt DateTime @default(now())
+model Teacher {
+  id         Int      @id
+  experience String?
+  bio        String?
+  photo      String?
+  subjects   String[]
 
-  userId     Int
-  user       User     @relation(fields: [userId], references: [id])
-
-  courseId   Int
-  course     Course   @relation(fields: [courseId], references: [id])
-
-  @@unique([userId, courseId])
+  user      User       @relation(fields: [id], references: [id])
+  schedules Schedule[] @relation("TeacherSchedules")
+  groups    Group[]
 }
 
-model Assignment {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String
-  deadline    DateTime
+model Student {
+  id    Int     @id
+  bio   String?
+  hobby String?
+  photo String?
 
-  courseId    Int
-  course      Course   @relation(fields: [courseId], references: [id])
-
-  submissions Submission[]
+  user    User     @relation(fields: [id], references: [id])
+  parents Parent[]
+  groups  Group[]
 }
 
-model Submission {
-  id           Int      @id @default(autoincrement())
-  fileUrl      String
-  grade        Int?
-  submittedAt  DateTime @default(now())
-
-  assignmentId Int
-  assignment   Assignment @relation(fields: [assignmentId], references: [id])
-
-  studentId    Int
-  student      Student   @relation(fields: [studentId], references: [id])
-}
-
-model Quiz {
-  id        Int    @id @default(autoincrement())
-  title     String
-  timeLimit Int
-
-  courseId  Int
-  course    Course @relation(fields: [courseId], references: [id])
-
-  questions Question[]
-}
-
-model Question {
-  id       Int    @id @default(autoincrement())
-  question String
-  type     String
-
-  quizId   Int
-  quiz     Quiz   @relation(fields: [quizId], references: [id])
-
-  answers  Answer[]
-}
-
-model Answer {
-  id         Int    @id @default(autoincrement())
-  answer     String
-  isCorrect  Boolean @default(false)
-
-  questionId Int
-  question   Question @relation(fields: [questionId], references: [id])
-}
-
-model Attendance {
-  id        Int     @id @default(autoincrement())
-  isPresent Boolean @default(false)
-
-  lessonId  Int
-  lesson    Lesson  @relation(fields: [lessonId], references: [id])
+model Parent {
+  id    Int        @id @default(autoincrement())
+  name  String
+  phone String
+  type  ParentType
 
   studentId Int
   student   Student @relation(fields: [studentId], references: [id])
 }
 
-model Certificate {
-  id        Int      @id @default(autoincrement())
-  issuedAt  DateTime @default(now())
-
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-
-  courseId  Int
-  course    Course   @relation(fields: [courseId], references: [id])
-}
-
-model Setting {
-  id    Int    @id @default(autoincrement())
-  key   String @unique
-  value String
-}
-
-model Notification {
-  id        Int      @id @default(autoincrement())
-  title     String
-  message   String
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-}
-
-model ActivityLog {
-  id        Int      @id @default(autoincrement())
-  action    String
-  entity    String
-  entityId  Int
-  createdAt DateTime @default(now())
-
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-}
-
-model Group {
-  id        Int      @id @default(autoincrement())
-
-  teachers  Teacher[]
-  students  Student[]
-}
-
-model Schedule {
-  id        Int    @id @default(autoincrement())
-  day       String
-  startTime DateTime
-  endTime   DateTime
-}
-
-model Teacher {
-  id         Int     @id
-  experience String
-  bio        String?
-  photo      String?
-  subjects   String[]
-
-  user       User    @relation(fields: [id], references: [id])
-
-  groups     Group[]
-}
-
-model Student {
-  id       Int     @id
-  bio      String?
-  hobby    String?
-  parents  Json?
-  photo    String?
-
-  user     User    @relation(fields: [id], references: [id])
-
-  groups   Group[]
-  submissions Submission[]
-  attendance Attendance[]
+enum ParentType {
+  father
+  mother
+  guardian
 }

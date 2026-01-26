@@ -6,6 +6,10 @@ import {UsersModule} from './users/users.module';
 import {AuthModule} from './auth/auth.module';
 import {JwtModule} from "@nestjs/jwt";
 import { RolesModule } from './roles/roles.module';
+import { CompanyModule } from './company/company.module';
+import { PermissionsModule } from './permissions/permissions.module';
+import { StudentsModule } from './students/students.module';
+import { TeachersModule } from './teachers/teachers.module';
 
 @Module({
     imports: [PrismaModule, UsersModule, AuthModule, JwtModule.register({
@@ -13,7 +17,7 @@ import { RolesModule } from './roles/roles.module';
         signOptions: {
             expiresIn: '1d',
         },
-    }), RolesModule,],
+    }), RolesModule, CompanyModule, PermissionsModule, StudentsModule, TeachersModule,],
     controllers: [AppController],
     providers: [AppService],
 })
