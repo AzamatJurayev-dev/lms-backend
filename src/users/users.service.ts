@@ -1,4 +1,4 @@
-import {BadRequestException, Injectable} from '@nestjs/common';
+import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
 import {PrismaService} from '../prisma/prisma.service';
 import {CreateUserDto} from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
@@ -123,6 +123,19 @@ export class UsersService {
             where: {id},
             data,
         });
+    }
+
+    async remove(id: number) {
+        try {
+            return await this.prisma.user.delete({
+                where: {id},
+            });
+        } catch (e) {
+            if (e.code === 'P2025') {
+                throw new NotFoundException('Company not found');
+            }
+            throw e;
+        }
     }
 
 }

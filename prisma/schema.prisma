@@ -103,6 +103,21 @@ model PermissionTranslation {
 model Group {
   id        Int        @id @default(autoincrement())
   name      String
+  code      String   @unique
+
+  description String?
+  level       String?
+  startDate   DateTime?
+  endDate     DateTime?
+  isActive  Boolean @default(true)
+
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subjectId Int
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
   teachers  Teacher[]
   students  Student[]
   schedules Schedule[] @relation("GroupSchedules")
@@ -113,9 +128,6 @@ model Schedule {
   day       WeekDays
   startTime DateTime
   endTime   DateTime
-
-  teacherId Int
-  teacher   Teacher @relation("TeacherSchedules", fields: [teacherId], references: [id])
 
   groupId Int
   group   Group @relation("GroupSchedules", fields: [groupId], references: [id])
@@ -138,9 +150,19 @@ model Teacher {
   photo      String?
   subjects   String[]
 
-  user      User       @relation(fields: [id], references: [id])
-  schedules Schedule[] @relation("TeacherSchedules")
+  user      User       @relation(fields: [id], references: [id])\
   groups    Group[]
+}
+
+model Subject {
+  id       Int     @id @default(autoincrement())
+  name     String  @unique
+  code        String   @unique
+  description String?
+  isActive  Boolean @default(true)
+  groups    Group[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Student {
@@ -149,9 +171,9 @@ model Student {
   hobby String?
   photo String?
 
-  user    User     @relation(fields: [id], references: [id])
-  parents Parent[]
-  groups  Group[]
+  user      User       @relation(fields: [id], references: [id])
+  parents   Parent[]
+  groups    Group[]
 }
 
 model Parent {

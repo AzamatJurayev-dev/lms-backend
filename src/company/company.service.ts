@@ -54,7 +54,12 @@ export class CompanyService {
                 where: {id},
                 data: {
                     ...(dto.name !== undefined && {name: dto.name}),
+                    ...(dto.code !== undefined && {code: dto.code}),
                     ...(dto.isActive !== undefined && {isActive: dto.isActive}),
+                    ...(dto.address !== undefined && {address: dto.address}),
+                    ...(dto.phone !== undefined && {phone: dto.phone}),
+                    ...(dto.email !== undefined && {email: dto.email}),
+                    ...(dto.description !== undefined && {description: dto.description}),
                 },
                 select: CompanyPublicSelect,
             });
@@ -65,6 +70,7 @@ export class CompanyService {
             throw e;
         }
     }
+
 
     async remove(id: number) {
         try {

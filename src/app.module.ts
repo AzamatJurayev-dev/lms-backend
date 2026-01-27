@@ -10,6 +10,7 @@ import { CompanyModule } from './company/company.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { StudentsModule } from './students/students.module';
 import { TeachersModule } from './teachers/teachers.module';
+import { SubjectsModule } from './subjects/subjects.module';
 
 @Module({
     imports: [PrismaModule, UsersModule, AuthModule, JwtModule.register({
@@ -17,7 +18,7 @@ import { TeachersModule } from './teachers/teachers.module';
         signOptions: {
             expiresIn: '1d',
         },
-    }), RolesModule, CompanyModule, PermissionsModule, StudentsModule, TeachersModule,],
+    }), RolesModule, CompanyModule, PermissionsModule, StudentsModule, TeachersModule, SubjectsModule,],
     controllers: [AppController],
     providers: [AppService],
 })
