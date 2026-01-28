@@ -1,5 +1,5 @@
 import {Injectable} from '@nestjs/common';
-import {UpdateTeacherDto} from './dto/update-teacher.dto';
+import {UpdateTeacherDto, UpdateTeacherSubjectDto} from './dto/update-teacher.dto';
 import {ApiProperty} from "@nestjs/swagger";
 import {UserSelect} from "../users/utils/users.select";
 import {PrismaService} from "../prisma/prisma.service";
@@ -21,8 +21,8 @@ export class TeachersService {
                     bio: true,
                     photo: true,
                     groups: true,
+                    subjects: true,
                     experience: true,
-                    schedules: true,
                     user: {
                         select: UserSelect
                     },
@@ -43,10 +43,34 @@ export class TeachersService {
     }
 
     findOne(id: number) {
-        return `This action returns a #${id} teacher`;
+        return this.prisma.teacher.findUnique({
+            where: {id},
+            select: {
+                id: true,
+                bio: true,
+                photo: true,
+                groups: true,
+                subjects: true,
+                experience: true,
+                user: {
+                    select: UserSelect
+                },
+            }
+        });
     }
 
     update(id: number, updateTeacherDto: UpdateTeacherDto) {
         return `This action updates a #${id} teacher`;
+    }
+
+    setSubject(teacherId: number, dto: UpdateTeacherSubjectDto) {
+        return this.prisma.teacher.update({
+            where: {id: teacherId},
+            data: {
+                subjects: {
+                    connect: dto.subject_ids.map((id) => ({id})),
+                },
+            },
+        });
     }
 }

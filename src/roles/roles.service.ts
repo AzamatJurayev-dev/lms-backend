@@ -50,7 +50,7 @@ export class RolesService {
 
     async getAll(lang: string) {
         const roles = await this.prisma.role.findMany({
-            where: {isActive: true},
+            where: {isSystem: false},
             select: {
                 id: true,
                 code: true,

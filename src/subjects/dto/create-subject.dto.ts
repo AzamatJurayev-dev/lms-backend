@@ -5,6 +5,9 @@ export class CreateSubjectDto {
     @IsNotEmpty()
     name: string
 
+    @IsString()
+    description: string
+
     @IsBoolean()
     isActive: boolean
 }

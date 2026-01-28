@@ -4,6 +4,7 @@ import {paginate} from "../common/pagination/pagination.helper";
 import {CreateSubjectDto} from "./dto/create-subject.dto";
 import {UpdateSubjectDto} from "./dto/update-subject.dto";
 import {SubjectSelect} from "./utils/subject.select";
+import {Prisma} from "@prisma/client";
 
 @Injectable()
 export class SubjectsService {
@@ -23,18 +24,40 @@ export class SubjectsService {
         });
     }
 
-    async findAll(page: number, page_size: number) {
-        const skip = (page - 1) * page_size
-        const [subject, total] = await Promise.all([
+    async findAll(page: number, page_size: number, search?: string) {
+        const skip = (page - 1) * page_size;
+
+        const where = search
+            ? {
+                OR: [
+                    {
+                        name: {
+                            contains: search,
+                            mode: Prisma.QueryMode.insensitive,
+                        },
+                    }
+                ],
+            }
+            : undefined;
+
+        const [subjects, total] = await Promise.all([
             this.prisma.subject.findMany({
                 skip,
                 take: page_size,
+                where,
                 select: SubjectSelect,
+                orderBy: {
+                    createdAt: 'desc',
+                },
             }),
-            this.prisma.subject.count()
-        ])
-        return paginate(subject, page, page_size, total)
+            this.prisma.subject.count({
+                where,
+            }),
+        ]);
+
+        return paginate(subjects, page, page_size, total);
     }
+
 
     async findOne(id: number) {
         const subject = await this.prisma.subject.findUnique({
@@ -54,6 +77,7 @@ export class SubjectsService {
                 where: {id},
                 data: {
                     ...(dto.name !== undefined && {name: dto.name}),
+                    ...(dto.description !== undefined && {description: dto.description}),
                     ...(dto.isActive !== undefined && {isActive: dto.isActive}),
                 },
                 select: SubjectSelect,

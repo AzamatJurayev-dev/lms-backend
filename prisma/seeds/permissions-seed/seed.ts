@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-import { RESOURCES, LANG_LABELS } from './permissions.config';
+import {PrismaClient} from '@prisma/client';
+import {LANG_LABELS, RESOURCES} from './permissions.config';
 
 const prisma = new PrismaClient();
 
@@ -10,24 +10,22 @@ async function upsertTranslations(
     for (const [lang, name] of Object.entries(names)) {
         await prisma.permissionTranslation.upsert({
             where: {
-                permissionId_lang: { permissionId, lang },
+                permissionId_lang: {permissionId, lang},
             },
-            update: { name },
-            create: { permissionId, lang, name },
+            update: {name},
+            create: {permissionId, lang, name},
         });
     }
 }
 
 async function main() {
     for (const [module, actions] of Object.entries(RESOURCES)) {
-        // parent
         const parent = await prisma.permission.upsert({
-            where: { code: module },
+            where: {code: module},
             update: {},
-            create: { code: module },
+            create: {code: module},
         });
 
-        // module translations
         const moduleNames = Object.fromEntries(
             Object.entries(LANG_LABELS).map(([lang, labels]) => [
                 lang,
@@ -37,12 +35,11 @@ async function main() {
 
         await upsertTranslations(parent.id, moduleNames);
 
-        // children
         for (const action of actions) {
             const code = `${module}.${action}`;
 
             const permission = await prisma.permission.upsert({
-                where: { code },
+                where: {code},
                 update: {},
                 create: {
                     code,

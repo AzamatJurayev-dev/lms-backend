@@ -16,7 +16,7 @@ export class SubjectsController {
 
     @Get()
     findAll(@Query() query: ParamsDTO) {
-        return this.subjectsService.findAll(query.page ?? 1, query.page_size ?? 10);
+        return this.subjectsService.findAll(query.page ?? 1, query.page_size ?? 10, query.search?.trim());
     }
 
     @Get(':id')

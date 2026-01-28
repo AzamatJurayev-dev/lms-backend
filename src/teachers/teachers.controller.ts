@@ -1,6 +1,6 @@
-import {Body, Controller, Get, Param, Patch, Query} from '@nestjs/common';
+import {Body, Controller, Get, Param, Patch, Put, Query} from '@nestjs/common';
 import {TeachersService} from './teachers.service';
-import {UpdateTeacherDto} from './dto/update-teacher.dto';
+import {UpdateTeacherDto, UpdateTeacherSubjectDto} from './dto/update-teacher.dto';
 import {ParamsDTO} from "../common/query/query-dto";
 
 @Controller('teachers')
@@ -24,4 +24,8 @@ export class TeachersController {
         return this.teachersService.update(+id, updateTeacherDto);
     }
 
+    @Put(":id/set-subject")
+    setSubject(@Param('id') id: string, @Body() dto: UpdateTeacherSubjectDto) {
+        return this.teachersService.setSubject(+id, dto)
+    }
 }
