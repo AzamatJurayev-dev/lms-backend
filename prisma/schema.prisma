@@ -107,7 +107,6 @@ model Group {
   code String @unique
 
   description String?
-  level       String?
   startDate   DateTime?
   endDate     DateTime?
   isActive    Boolean   @default(true)
@@ -115,12 +114,44 @@ model Group {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  levelId Int?
+  level   Level? @relation(fields: [levelId], references: [id])
+
+  roomId Int?
+  room   Room? @relation(fields: [roomId], references: [id])
+
   subjectId Int
   subject   Subject @relation(fields: [subjectId], references: [id])
 
   teachers  Teacher[]
   students  Student[]
   schedules Schedule[] @relation("GroupSchedules")
+}
+
+model Level {
+  id       Int     @id @default(autoincrement())
+  name     String
+  code     String  @unique
+  isActive Boolean @default(true)
+
+  groups Group[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Room {
+  id       Int     @id @default(autoincrement())
+  name     String
+  code     String  @unique
+  floor    Int
+  number   Int
+  isActive Boolean @default(true)
+
+  groups Group[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Schedule {
@@ -184,6 +215,15 @@ model Parent {
 
   studentId Int
   student   Student @relation(fields: [studentId], references: [id])
+}
+
+model File {
+  id          Int      @id @default(autoincrement())
+  file        String
+  fileType    String
+  fileSize    Int
+  contentType String
+  createdAt   DateTime @default(now())
 }
 
 enum ParentType {

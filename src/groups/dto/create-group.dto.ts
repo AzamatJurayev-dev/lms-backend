@@ -8,7 +8,6 @@ import {
     IsOptional,
     IsPositive,
     IsString,
-    Matches,
     MaxLength,
     MinLength,
 } from 'class-validator';
@@ -33,13 +32,9 @@ export class CreateGroupDto {
         description: 'Unique group code',
         minLength: 2,
         maxLength: 20,
-        pattern: '^[A-Z0-9_-]+$',
     })
     @IsString()
     @IsNotEmpty()
-    @Matches(/^[A-Z0-9_-]+$/, {
-        message: 'code must contain only A-Z, 0-9, _ or -',
-    })
     @MinLength(2)
     @MaxLength(20)
     code: string;
@@ -55,12 +50,20 @@ export class CreateGroupDto {
     description?: string;
 
     @ApiProperty({
-        example: '9',
-        description: 'Education level (grade / course)',
+        example: 1,
+        description: 'Related level ID',
     })
-    @IsString()
-    @IsNotEmpty()
-    level: string;
+    @IsInt()
+    @IsPositive()
+    levelId: number;
+
+    @ApiProperty({
+        example: 1,
+        description: 'Related room ID',
+    })
+    @IsInt()
+    @IsPositive()
+    roomId: number;
 
     @ApiProperty({
         example: '2026-02-01',

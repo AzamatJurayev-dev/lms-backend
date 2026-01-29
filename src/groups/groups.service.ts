@@ -17,7 +17,7 @@ export class GroupsService {
                     name: dto.name,
                     code: dto.code,
                     description: dto.description,
-                    level: dto.level,
+                    levelId:dto.levelId,
                     startDate: dto.startDate,
                     endDate: dto.endDate,
                     isActive: dto.isActive,
