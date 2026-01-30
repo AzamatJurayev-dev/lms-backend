@@ -1,4 +1,4 @@
-import {Injectable} from '@nestjs/common';
+import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
 import {CreateGroupDto} from './dto/create-group.dto';
 import {UpdateGroupDto} from './dto/update-group.dto';
 import {PrismaService} from "../prisma/prisma.service";
@@ -17,7 +17,8 @@ export class GroupsService {
                     name: dto.name,
                     code: dto.code,
                     description: dto.description,
-                    levelId:dto.levelId,
+                    levelId: dto.levelId,
+                    roomId: dto.roomId,
                     startDate: dto.startDate,
                     endDate: dto.endDate,
                     isActive: dto.isActive,
@@ -45,15 +46,32 @@ export class GroupsService {
         return paginate(groups, total, page, page_size);
     }
 
-    findOne(id: number) {
-        return `This action returns a #${id} group`;
+    async findOne(id: number) {
+        const group = await this.prisma.group.findUnique({
+            where: {id},
+            select: GroupSelect
+        });
+
+        if (!group) {
+            throw new BadRequestException('Group not found');
+        }
+        return group
     }
 
     update(id: number, updateGroupDto: UpdateGroupDto) {
         return `This action updates a #${id} group`;
     }
 
-    remove(id: number) {
-        return `This action removes a #${id} group`;
+    async remove(id: number) {
+        try {
+            return await this.prisma.group.delete({
+                where: {id}
+            })
+        } catch (e) {
+            if (e.code === 'P2025') {
+                throw new NotFoundException('Company not found');
+            }
+            throw e;
+        }
     }
 }

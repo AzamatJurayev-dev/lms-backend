@@ -176,19 +176,15 @@ export class RolesService {
 
 
     async remove(id: number) {
-        const role = await this.prisma.role.findUnique({where: {id}});
-        if (!role) {
-            throw new NotFoundException('Role not found');
+        try {
+            return await this.prisma.role.delete({
+                where: {id}
+            })
+        } catch (e) {
+            if (e.code === 'P2025') {
+                throw new NotFoundException('Company not found');
+            }
+            throw e;
         }
-
-        await this.prisma.roleTranslation.deleteMany({
-            where: {roleId: id},
-        });
-
-        await this.prisma.role.delete({
-            where: {id},
-        });
-
-        return {success: true};
     }
 }

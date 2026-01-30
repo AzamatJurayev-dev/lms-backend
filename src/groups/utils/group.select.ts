@@ -5,12 +5,22 @@ export const GroupSelect = Prisma.validator<Prisma.GroupSelect>()({
     name: true,
     code: true,
     description: true,
-    level: true,
     startDate: true,
     endDate: true,
     isActive: true,
-
     subjectId: true,
+    room: {
+        select: {
+            id: true,
+            name: true,
+        },
+    },
+    level: {
+        select: {
+            id: true,
+            name: true,
+        },
+    },
     subject: {
         select: {
             id: true,
@@ -23,7 +33,6 @@ export const GroupSelect = Prisma.validator<Prisma.GroupSelect>()({
             user: true
         },
     },
-
     createdAt: true,
     updatedAt: true,
 });

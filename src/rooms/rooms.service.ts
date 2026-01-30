@@ -1,26 +1,51 @@
-import { Injectable } from '@nestjs/common';
-import { CreateRoomDto } from './dto/create-room.dto';
-import { UpdateRoomDto } from './dto/update-room.dto';
+import {Injectable, NotFoundException} from '@nestjs/common';
+import {CreateRoomDto} from './dto/create-room.dto';
+import {UpdateRoomDto} from './dto/update-room.dto';
+import {PrismaService} from "../prisma/prisma.service";
+import {paginate} from "../common/pagination/pagination.helper";
 
 @Injectable()
 export class RoomsService {
-  create(createRoomDto: CreateRoomDto) {
-    return 'This action adds a new room';
-  }
+    constructor(private prisma: PrismaService) {
+    }
 
-  findAll() {
-    return `This action returns all rooms`;
-  }
+    create(createRoomDto: CreateRoomDto) {
+        return this.prisma.room.create({
+            data: {...createRoomDto}
+        });
+    }
 
-  findOne(id: number) {
-    return `This action returns a #${id} room`;
-  }
+    async findAll(page: number, page_size: number) {
+        const skip = (page - 1) * page_size
+        const [rooms, total] = await Promise.all([
+            this.prisma.room.findMany({
+                skip,
+                take: page_size,
+            }),
+            this.prisma.room.count()
+        ]);
 
-  update(id: number, updateRoomDto: UpdateRoomDto) {
-    return `This action updates a #${id} room`;
-  }
+        return paginate(rooms, total, page, page_size)
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} room`;
-  }
+    findOne(id: number) {
+        return `This action returns a #${id} room`;
+    }
+
+    update(id: number, updateRoomDto: UpdateRoomDto) {
+        return `This action updates a #${id} room`;
+    }
+
+    async remove(id: number) {
+        try {
+            return await this.prisma.room.delete({
+                where: {id}
+            })
+        } catch (e) {
+            if (e.code === 'P2025') {
+                throw new NotFoundException('Company not found');
+            }
+            throw e;
+        }
+    }
 }

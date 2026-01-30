@@ -1,7 +1,8 @@
-import {Injectable} from '@nestjs/common';
+import {Injectable, NotFoundException} from '@nestjs/common';
 import {CreateLevelDto} from './dto/create-level.dto';
 import {UpdateLevelDto} from './dto/update-level.dto';
 import {PrismaService} from "../prisma/prisma.service";
+import {paginate} from "../common/pagination/pagination.helper";
 
 @Injectable()
 export class LevelsService {
@@ -16,8 +17,17 @@ export class LevelsService {
         })
     }
 
-    findAll() {
-        return `This action returns all levels`;
+    async findAll(page: number, page_size: number) {
+        const skip = (page - 1) * page_size
+
+        const [levels, total] = await Promise.all([
+            this.prisma.level.findMany({
+                skip,
+                take: page_size,
+            }),
+            this.prisma.level.count(),
+        ]);
+        return paginate(levels, total, page, page_size)
     }
 
     findOne(id: number) {
@@ -28,7 +38,16 @@ export class LevelsService {
         return `This action updates a #${id} level`;
     }
 
-    remove(id: number) {
-        return `This action removes a #${id} level`;
+    async remove(id: number) {
+        try {
+            return await this.prisma.level.delete({
+                where: {id}
+            })
+        } catch (e) {
+            if (e.code === 'P2025') {
+                throw new NotFoundException('Company not found');
+            }
+            throw e;
+        }
     }
 }
