@@ -1,0 +1,46 @@
+model Role {
+  id       Int     @id @default(autoincrement())
+  code     String  @unique
+  isActive Boolean @default(true)
+  isPublic Boolean @default(true)
+  isSystem Boolean @default(false)
+
+  permissions Permission[] @relation("RolePermissions")
+
+  users        User[]
+  translations RoleTranslation[]
+}
+
+model RoleTranslation {
+  id   Int    @id @default(autoincrement())
+  lang String
+  name String
+
+  roleId Int
+  role   Role @relation(fields: [roleId], references: [id])
+
+  @@unique([roleId, lang])
+}
+
+model Permission {
+  id       Int          @id @default(autoincrement())
+  code     String       @unique
+  parentId Int?
+  parent   Permission?  @relation("PermissionTree", fields: [parentId], references: [id])
+  children Permission[] @relation("PermissionTree")
+
+  roles Role[] @relation("RolePermissions")
+
+  translations PermissionTranslation[]
+}
+
+model PermissionTranslation {
+  id   Int    @id @default(autoincrement())
+  lang String
+  name String
+
+  permissionId Int
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([permissionId, lang])
+}

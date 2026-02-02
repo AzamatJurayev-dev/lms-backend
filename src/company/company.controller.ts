@@ -19,8 +19,8 @@ export class CompanyController {
     }
 
     @Get()
-    findAll(@Query() query: ParamsDTO) {
-        return this.companyService.findAll(query?.page ?? 1, query?.page_size ?? 10);
+    findAll(@Query() query: any) {
+        return this.companyService.findAll(query);
     }
 
     @Get(':id')

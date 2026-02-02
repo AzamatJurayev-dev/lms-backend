@@ -1,0 +1,27 @@
+model Company {
+  id Int @id @default(autoincrement())
+
+  name        String  @unique
+  code        String?
+  description String?
+
+  email   String?
+  phone   String?
+  address String?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  users     User[]
+  groups    Group[]
+  levels    Level[]
+  rooms     Room[]
+  schedules Schedule[]
+  subjects  Subject[]
+  teachers  Teacher[]
+  students  Student[]
+  parents   Parent[]
+}

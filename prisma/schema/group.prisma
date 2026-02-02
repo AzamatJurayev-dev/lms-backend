@@ -1,0 +1,104 @@
+model Group {
+  id   Int    @id @default(autoincrement())
+  name String
+  code String @unique
+
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  isActive    Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  levelId Int?
+  level   Level? @relation(fields: [levelId], references: [id])
+
+  roomId Int?
+  room   Room? @relation(fields: [roomId], references: [id])
+
+  subjectId Int
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  teachers  Teacher[]
+  students  Student[]
+  schedules Schedule[] @relation("GroupSchedules")
+}
+
+model Level {
+  id       Int     @id @default(autoincrement())
+  name     String
+  code     String  @unique
+  isActive Boolean @default(true)
+
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  groups Group[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Room {
+  id       Int     @id @default(autoincrement())
+  name     String
+  code     String  @unique
+  floor    Int
+  number   Int
+  isActive Boolean @default(true)
+
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  groups Group[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Schedule {
+  id        Int      @id @default(autoincrement())
+  day       WeekDays
+  startTime DateTime
+  endTime   DateTime
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+  groupId   Int
+  group     Group    @relation("GroupSchedules", fields: [groupId], references: [id])
+}
+
+enum WeekDays {
+  monday
+  tuesday
+  wednesday
+  thursday
+  friday
+  saturday
+  sunday
+}
+
+model Subject {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  companyId   Int?
+  company     Company?  @relation(fields: [companyId], references: [id])
+  groups      Group[]
+  teachers    Teacher[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model File {
+  id          Int      @id @default(autoincrement())
+  file        String
+  fileType    String
+  fileSize    Int
+  contentType String
+  createdAt   DateTime @default(now())
+}

@@ -4,12 +4,18 @@ import {UpdateGroupDto} from './dto/update-group.dto';
 import {PrismaService} from "../prisma/prisma.service";
 import {paginate} from "../common/pagination/pagination.helper";
 import {GroupSelect} from "./utils/group.select";
+import {AddStudentsDto} from "./dto/add-students.dto";
+import {AddScheduleDto} from "./dto/add-schedule.dto";
+import {timeToDate} from "../common/utils/time-to-date";
 
 @Injectable()
 export class GroupsService {
     constructor(private prisma: PrismaService) {
     }
 
+    private formatTime(date: Date) {
+        return date.toISOString().substring(11, 16);
+    }
     create(dto: CreateGroupDto) {
         return this.prisma.group.create(
             {
@@ -73,5 +79,215 @@ export class GroupsService {
             }
             throw e;
         }
+    }
+
+    async addStudents(groupId: number, dto: AddStudentsDto) {
+        return this.prisma.$transaction(async (tx) => {
+
+            const group = await tx.group.findUnique({
+                where: {id: groupId}
+            });
+            if (!group) throw new Error('Group not found');
+
+            const students = await tx.student.findMany({
+                where: {id: {in: dto.studentIds}},
+                select: {id: true}
+            });
+
+            if (students.length !== dto.studentIds.length) {
+                throw new Error('Some students not found');
+            }
+
+            await tx.group.update({
+                where: {id: groupId},
+                data: {
+                    students: {
+                        connect: dto.studentIds.map(id => ({id}))
+                    }
+                }
+            });
+
+            return {groupId, added: dto.studentIds.length};
+        });
+    }
+
+    async getStudents(groupId: number) {
+        const group = await this.prisma.group.findUnique({
+            where: {id: groupId},
+            select: {
+                teachers: true,
+                subject: true,
+                students: true
+            }
+        });
+
+        if (!group) {
+            throw new Error('Group not found');
+        }
+
+        return group;
+    }
+
+    async removeStudents(groupId: number, studentIds: number[]) {
+        return this.prisma.$transaction(async (tx) => {
+            const group = await tx.group.findUnique({
+                where: {id: groupId},
+            });
+            if (!group) throw new Error("Group not found");
+
+            return tx.group.update({
+                where: {id: groupId},
+                data: {
+                    students: {
+                        disconnect: studentIds.map((id) => ({id})),
+                    },
+                },
+            });
+        });
+    }
+
+
+    async addSchedule(groupId: number, dto: AddScheduleDto) {
+        return this.prisma.$transaction(async (tx) => {
+
+            const group = await tx.group.findUnique({
+                where: {id: groupId},
+            });
+            if (!group) {
+                throw new Error("Group not found");
+            }
+            const startTime = timeToDate(dto.startTime);
+            const endTime = timeToDate(dto.endTime);
+
+            const conflict = await tx.schedule.findFirst({
+                where: {
+                    groupId,
+                    day: dto.day,
+                    OR: [
+                        {
+                            startTime: {lt: startTime},
+                            endTime: {gt: endTime},
+                        },
+                    ],
+                },
+            });
+
+            if (conflict) {
+                throw new Error("Schedule time conflict");
+            }
+
+            return await tx.schedule.create({
+                data: {
+                    day: dto.day,
+                    startTime: startTime,
+                    endTime: endTime,
+                    groupId,
+                    companyId: group.companyId ?? undefined,
+                },
+            });
+        });
+    }
+
+    async getSchedules(groupId: number) {
+        const group = await this.prisma.group.findUnique({
+            where: {id: groupId},
+            select: {
+                schedules: {
+                    orderBy: [
+                        {day: "asc"},
+                        {startTime: "asc"},
+                    ],
+                },
+            },
+        });
+
+        if (!group) {
+            throw new Error("Group not found");
+        }
+
+        return group.schedules.map((s) => ({
+            id: s.id,
+            day: s.day,
+            startTime: this.formatTime(s.startTime),
+            endTime: this.formatTime(s.endTime),
+            groupId: s.groupId,
+        }));
+    }
+
+
+    async updateSchedule(
+        groupId: number,
+        scheduleId: number,
+        dto: AddScheduleDto,
+    ) {
+        return this.prisma.$transaction(async (tx) => {
+
+            const group = await tx.group.findUnique({
+                where: {id: groupId},
+            });
+            if (!group) {
+                throw new Error("Group not found");
+            }
+
+            const schedule = await tx.schedule.findUnique({
+                where: {id: scheduleId},
+            });
+            if (!schedule) {
+                throw new Error("Schedule not found");
+            }
+
+            const startTime = new Date(dto.startTime);
+            const endTime = new Date(dto.endTime);
+
+            if (startTime >= endTime) {
+                throw new Error("End time must be after start time");
+            }
+
+            const conflict = await tx.schedule.findFirst({
+                where: {
+                    id: {not: scheduleId},
+                    groupId,
+                    day: dto.day,
+                    startTime: {lt: endTime},
+                    endTime: {gt: startTime},
+                },
+            });
+
+            if (conflict) {
+                throw new Error("Schedule time conflict");
+            }
+            return tx.schedule.update({
+                where: {id: scheduleId},
+                data: {
+                    day: dto.day,
+                    startTime,
+                    endTime,
+                    companyId: group.companyId ?? undefined,
+                },
+            });
+        });
+    }
+
+    async deleteSchedule(groupId: number, scheduleId: number) {
+        return this.prisma.$transaction(async (tx) => {
+            const group = await tx.group.findUnique({
+                where: {id: groupId},
+            });
+            if (!group) {
+                throw new Error("Group not found");
+            }
+
+
+            const schedule = await tx.schedule.findUnique({
+                where: {id: scheduleId},
+            });
+            if (!schedule) {
+                throw new Error("Schedule not found");
+            }
+
+            return tx.schedule.delete({
+                where: {id: scheduleId},
+            });
+        });
     }
 }

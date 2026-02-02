@@ -1,8 +1,9 @@
-import {Body, Controller, Delete, Get, Param, Patch, Post, Query} from '@nestjs/common';
+import {Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, Query} from '@nestjs/common';
 import {GroupsService} from './groups.service';
 import {CreateGroupDto} from './dto/create-group.dto';
 import {UpdateGroupDto} from './dto/update-group.dto';
 import {ParamsDTO} from "../common/query/query-dto";
+import {AddStudentsDto} from "./dto/add-students.dto";
 
 @Controller('groups')
 export class GroupsController {
@@ -10,8 +11,8 @@ export class GroupsController {
     }
 
     @Post()
-    create(@Body() createGroupDto: CreateGroupDto) {
-        return this.groupsService.create(createGroupDto);
+    create(@Body() dto: CreateGroupDto) {
+        return this.groupsService.create(dto);
     }
 
     @Get()
@@ -20,17 +21,73 @@ export class GroupsController {
     }
 
     @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.groupsService.findOne(+id);
+    findOne(@Param('id', ParseIntPipe) id: number) {
+        return this.groupsService.findOne(id);
     }
 
     @Patch(':id')
-    update(@Param('id') id: string, @Body() updateGroupDto: UpdateGroupDto) {
-        return this.groupsService.update(+id, updateGroupDto);
+    update(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() dto: UpdateGroupDto
+    ) {
+        return this.groupsService.update(id, dto);
     }
 
     @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.groupsService.remove(+id);
+    remove(@Param('id', ParseIntPipe) id: number) {
+        return this.groupsService.remove(id);
+    }
+
+    // ---------- STUDENTS ----------
+    @Put(':id/students')
+    addStudents(
+        @Param('id', ParseIntPipe) groupId: number,
+        @Body() dto: AddStudentsDto
+    ) {
+        return this.groupsService.addStudents(groupId, dto);
+    }
+
+    @Get(':id/students')
+    getStudents(@Param('id', ParseIntPipe) groupId: number) {
+        return this.groupsService.getStudents(groupId);
+    }
+
+    @Delete(':id/students')
+    removeStudents(
+        @Param('id', ParseIntPipe) groupId: number,
+        @Body() dto: { studentIds: number[] }
+    ) {
+        return this.groupsService.removeStudents(groupId, dto.studentIds);
+    }
+
+    // ---------- SCHEDULE ----------
+    @Post(':id/schedule')
+    addSchedule(
+        @Param('id', ParseIntPipe) groupId: number,
+        @Body() dto: any
+    ) {
+        return this.groupsService.addSchedule(groupId, dto);
+    }
+
+    @Get(':id/schedule')
+    getSchedules(@Param('id', ParseIntPipe) groupId: number) {
+        return this.groupsService.getSchedules(groupId);
+    }
+
+    @Put(':id/schedule/:scheduleId')
+    updateSchedule(
+        @Param('id', ParseIntPipe) groupId: number,
+        @Param('scheduleId', ParseIntPipe) scheduleId: number,
+        @Body() dto: any
+    ) {
+        return this.groupsService.updateSchedule(groupId, scheduleId, dto);
+    }
+
+    @Delete(':id/schedule/:scheduleId')
+    deleteSchedule(
+        @Param('id', ParseIntPipe) groupId: number,
+        @Param('scheduleId', ParseIntPipe) scheduleId: number
+    ) {
+        return this.groupsService.deleteSchedule(groupId, scheduleId);
     }
 }

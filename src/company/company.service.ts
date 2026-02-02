@@ -2,8 +2,9 @@ import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common
 import {CreateCompanyDto} from './dto/create-company.dto';
 import {UpdateCompanyDto} from './dto/update-company.dto';
 import {PrismaService} from "../prisma/prisma.service";
-import {paginate} from "../common/pagination/pagination.helper";
 import {CompanyPublicSelect} from "./utils/company.select";
+import {buildQuery} from "../common/query/query.helper";
+import {paginate} from "../common/pagination/pagination.helper";
 
 @Injectable()
 export class CompanyService {
@@ -23,18 +24,43 @@ export class CompanyService {
         });
     }
 
-    async findAll(page: number, page_size: number) {
-        const skip = (page - 1) * page_size
-        const [company, total] = await Promise.all([
+    async findAll(query: any) {
+        const q = buildQuery(
+            {
+                page: query.page,
+                pageSize: query.pageSize,
+                ordering: query.ordering,
+                search: query.search,
+                date_from: query.date_from,
+                date_to: query.date_to,
+                filters: {
+                    isActive: query.isActive,
+                },
+            },
+            {
+                allowedOrderFields: ['name', 'code', 'createdAt', 'isActive'],
+                allowedFilterFields: ['isActive'],
+                searchableFields: ['name', 'code'],
+                defaultOrderBy: {createdAt: 'desc'},
+                dateField: 'createdAt',
+            },
+        );
+
+        const [items, total] = await this.prisma.$transaction([
             this.prisma.company.findMany({
-                skip,
-                take: page_size,
-                select: CompanyPublicSelect,
+                skip: q.skip,
+                take: q.take,
+                where: q.where,
+                orderBy: q.orderBy,
             }),
-            this.prisma.company.count()
-        ])
-        return paginate(company, page, page_size, total)
+            this.prisma.company.count({
+                where: q.where,
+            }),
+        ]);
+
+        return paginate(items, total, q.page, q.pageSize)
     }
+
 
     async findOne(id: number) {
         const company = await this.prisma.company.findUnique({

@@ -1,0 +1,74 @@
+model User {
+  id       Int    @id @default(autoincrement())
+  username String @unique
+
+  firstName  String?
+  lastName   String?
+  middleName String?
+
+  password    String
+  phoneNumber String?
+
+  isActive          Boolean @default(true)
+  canChangePassword Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roleId Int?
+  role   Role? @relation(fields: [roleId], references: [id])
+
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  student Student?
+  teacher Teacher?
+}
+
+model Teacher {
+  id         Int     @id
+  experience String?
+
+  bio      String?
+  photo    String?
+  subjects Subject[]
+
+  user User @relation(fields: [id], references: [id])
+
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+  groups    Group[]
+}
+
+model Student {
+  id    Int     @id
+  bio   String?
+  hobby String?
+  photo String?
+
+  user User @relation(fields: [id], references: [id])
+
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+  parents   Parent[]
+  groups    Group[]
+}
+
+model Parent {
+  id    Int        @id @default(autoincrement())
+  name  String
+  phone String
+  type  ParentType
+
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  studentId Int
+  student   Student @relation(fields: [studentId], references: [id])
+}
+
+enum ParentType {
+  father
+  mother
+  guardian
+}
