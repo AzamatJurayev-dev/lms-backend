@@ -21,8 +21,8 @@ model Group {
   subject   Subject @relation(fields: [subjectId], references: [id])
 
   companyId Int?
-  company   Company? @relation(fields: [companyId], references: [id])
-
+  company   Company?   @relation(fields: [companyId], references: [id])
+  lessons   Lesson[]
   teachers  Teacher[]
   students  Student[]
   schedules Schedule[] @relation("GroupSchedules")
@@ -58,6 +58,7 @@ model Room {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  lessons   Lesson[]
 }
 
 model Schedule {
@@ -92,6 +93,7 @@ model Subject {
   teachers    Teacher[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  lessons     Lesson[]
 }
 
 model File {

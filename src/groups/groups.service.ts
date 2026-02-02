@@ -7,10 +7,12 @@ import {GroupSelect} from "./utils/group.select";
 import {AddStudentsDto} from "./dto/add-students.dto";
 import {AddScheduleDto} from "./dto/add-schedule.dto";
 import {timeToDate} from "../common/utils/time-to-date";
+import {GroupsLessonsService} from "./groups-lessons.service";
+import {ExtraLessonDto} from "./dto/extra-lesson.dto";
 
 @Injectable()
 export class GroupsService {
-    constructor(private prisma: PrismaService) {
+    constructor(private prisma: PrismaService, private readonly groupsLessonsService: GroupsLessonsService) {
     }
 
     private formatTime(date: Date) {
@@ -149,13 +151,13 @@ export class GroupsService {
 
     async addSchedule(groupId: number, dto: AddScheduleDto) {
         return this.prisma.$transaction(async (tx) => {
-
             const group = await tx.group.findUnique({
                 where: {id: groupId},
             });
             if (!group) {
                 throw new Error("Group not found");
             }
+
             const startTime = timeToDate(dto.startTime);
             const endTime = timeToDate(dto.endTime);
 
@@ -163,12 +165,8 @@ export class GroupsService {
                 where: {
                     groupId,
                     day: dto.day,
-                    OR: [
-                        {
-                            startTime: {lt: startTime},
-                            endTime: {gt: endTime},
-                        },
-                    ],
+                    startTime: {lt: endTime},
+                    endTime: {gt: startTime},
                 },
             });
 
@@ -176,17 +174,26 @@ export class GroupsService {
                 throw new Error("Schedule time conflict");
             }
 
-            return await tx.schedule.create({
+            const schedule = await tx.schedule.create({
                 data: {
                     day: dto.day,
-                    startTime: startTime,
-                    endTime: endTime,
+                    startTime,
+                    endTime,
                     groupId,
                     companyId: group.companyId ?? undefined,
                 },
             });
+
+            // 🔥 MUHIM JOY — AUTO LESSON CREATE
+            await this.groupsLessonsService.generateLessonsFromSchedule(
+                groupId,
+                schedule.id
+            );
+
+            return schedule;
         });
     }
+
 
     async getSchedules(groupId: number) {
         const group = await this.prisma.group.findUnique({
@@ -214,6 +221,38 @@ export class GroupsService {
         }));
     }
 
+    async deleteSchedule(groupId: number, scheduleId: number) {
+        return this.prisma.$transaction(async (tx) => {
+            const schedule = await tx.schedule.findUnique({
+                where: {id: scheduleId},
+            });
+
+            if (!schedule) {
+                throw new NotFoundException("Schedule not found");
+            }
+
+            // 🔥 Future lessons cancel
+            await tx.lesson.updateMany({
+                where: {
+                    groupId,
+                    isExtra: false,
+                    isDone: false,
+                    date: {
+                        gte: new Date(),
+                    },
+                },
+                data: {
+                    isCanceled: true,
+                },
+            });
+
+            return tx.schedule.delete({
+                where: {id: scheduleId},
+            });
+        });
+    }
+
+
 
     async updateSchedule(
         groupId: number,
@@ -221,7 +260,6 @@ export class GroupsService {
         dto: AddScheduleDto,
     ) {
         return this.prisma.$transaction(async (tx) => {
-
             const group = await tx.group.findUnique({
                 where: {id: groupId},
             });
@@ -236,8 +274,8 @@ export class GroupsService {
                 throw new Error("Schedule not found");
             }
 
-            const startTime = new Date(dto.startTime);
-            const endTime = new Date(dto.endTime);
+            const startTime = timeToDate(dto.startTime);
+            const endTime = timeToDate(dto.endTime);
 
             if (startTime >= endTime) {
                 throw new Error("End time must be after start time");
@@ -256,7 +294,8 @@ export class GroupsService {
             if (conflict) {
                 throw new Error("Schedule time conflict");
             }
-            return tx.schedule.update({
+
+            const updatedSchedule = await tx.schedule.update({
                 where: {id: scheduleId},
                 data: {
                     day: dto.day,
@@ -265,29 +304,56 @@ export class GroupsService {
                     companyId: group.companyId ?? undefined,
                 },
             });
+
+            await this.groupsLessonsService.syncFutureLessonsWithSchedule(
+                groupId,
+                scheduleId
+            );
+
+            return updatedSchedule;
         });
     }
 
-    async deleteSchedule(groupId: number, scheduleId: number) {
-        return this.prisma.$transaction(async (tx) => {
-            const group = await tx.group.findUnique({
-                where: {id: groupId},
-            });
-            if (!group) {
-                throw new Error("Group not found");
-            }
+    async getLessons(groupId: number) {
+        const group = await this.prisma.group.findUnique({
+            where: {id: groupId},
+            select: {
+                lessons: {
+                    orderBy: [
+                        {date: "asc"},
+                        {startTime: "asc"},
+                    ],
+                    include: {
+                        subject: true,
+                        teacher: true,
+                        room: true,
+                    },
+                },
+            },
+        });
 
+        if (!group) {
+            throw new NotFoundException("Group not found");
+        }
 
-            const schedule = await tx.schedule.findUnique({
-                where: {id: scheduleId},
-            });
-            if (!schedule) {
-                throw new Error("Schedule not found");
-            }
+        return group.lessons.map((l) => ({
+            id: l.id,
+            date: l.date,
+            startTime: l.startTime,
+            endTime: l.endTime,
+            isExtra: l.isExtra,
+            isDone: l.isDone,
+            isCanceled: l.isCanceled,
+            subject: l.subject,
+            teacher: l.teacher,
+            room: l.room,
+        }));
+    }
 
-            return tx.schedule.delete({
-                where: {id: scheduleId},
-            });
+    async createExtraLesson(groupId: number, dto: ExtraLessonDto) {
+        return this.groupsLessonsService.createExtraLesson({
+            ...dto,
+            groupId,
         });
     }
 }

@@ -1,0 +1,77 @@
+model Lesson {
+  id Int @id @default(autoincrement())
+
+  groupId Int
+  group   Group @relation(fields: [groupId], references: [id])
+
+  subjectId Int
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  teacherId Int?
+  teacher   Teacher? @relation(fields: [teacherId], references: [id])
+
+  roomId Int?
+  room   Room? @relation(fields: [roomId], references: [id])
+
+  date      DateTime
+  startTime DateTime
+  endTime   DateTime
+
+  isExtra    Boolean @default(false)
+  isDone     Boolean @default(false)
+  isCanceled Boolean @default(false)
+
+  topic       String?
+  description String?
+  homework    String?
+
+  attendances  Attendance[]
+  performances Performance[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([groupId, date, startTime])
+}
+
+model Attendance {
+  id Int @id @default(autoincrement())
+
+  lessonId Int
+  lesson   Lesson @relation(fields: [lessonId], references: [id])
+
+  studentId Int
+  student   Student @relation(fields: [studentId], references: [id])
+
+  status  AttendanceStatus
+  comment String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([lessonId, studentId])
+}
+
+enum AttendanceStatus {
+  present
+  absent
+  late
+  excused
+}
+
+model Performance {
+  id Int @id @default(autoincrement())
+
+  lessonId Int
+  lesson   Lesson @relation(fields: [lessonId], references: [id])
+
+  studentId Int
+  student   Student @relation(fields: [studentId], references: [id])
+
+  score   Float?
+  grade   String?
+  comment String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([lessonId, studentId])
+}

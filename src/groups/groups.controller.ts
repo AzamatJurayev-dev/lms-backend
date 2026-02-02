@@ -4,6 +4,7 @@ import {CreateGroupDto} from './dto/create-group.dto';
 import {UpdateGroupDto} from './dto/update-group.dto';
 import {ParamsDTO} from "../common/query/query-dto";
 import {AddStudentsDto} from "./dto/add-students.dto";
+import {ExtraLessonDto} from "./dto/extra-lesson.dto";
 
 @Controller('groups')
 export class GroupsController {
@@ -90,4 +91,19 @@ export class GroupsController {
     ) {
         return this.groupsService.deleteSchedule(groupId, scheduleId);
     }
+
+    @Get(':id/lessons')
+    getLessons(@Param('id', ParseIntPipe) groupId: number) {
+        return this.groupsService.getLessons(groupId);
+    }
+
+    @Post(':id/lessons/extra')
+    createExtraLesson(
+        @Param('id', ParseIntPipe) groupId: number,
+        @Body() dto: ExtraLessonDto,
+    ) {
+        return this.groupsService.createExtraLesson(groupId, dto);
+    }
+
+
 }

@@ -38,6 +38,7 @@ model Teacher {
   companyId Int?
   company   Company? @relation(fields: [companyId], references: [id])
   groups    Group[]
+  lessons   Lesson[]
 }
 
 model Student {
@@ -48,10 +49,12 @@ model Student {
 
   user User @relation(fields: [id], references: [id])
 
-  companyId Int?
-  company   Company? @relation(fields: [companyId], references: [id])
-  parents   Parent[]
-  groups    Group[]
+  companyId    Int?
+  company      Company?      @relation(fields: [companyId], references: [id])
+  parents      Parent[]
+  groups       Group[]
+  attendances  Attendance[]
+  performances Performance[]
 }
 
 model Parent {
