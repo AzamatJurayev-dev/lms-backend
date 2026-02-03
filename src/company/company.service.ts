@@ -40,7 +40,7 @@ export class CompanyService {
             {
                 allowedOrderFields: ['name', 'code', 'createdAt', 'isActive'],
                 allowedFilterFields: ['isActive'],
-                searchableFields: ['name', 'code'],
+                searchableFields: ['name', 'code', 'email', 'phone'],
                 defaultOrderBy: {createdAt: 'desc'},
                 dateField: 'createdAt',
             },
@@ -60,8 +60,6 @@ export class CompanyService {
 
         return paginate(items, total, q.page, q.pageSize)
     }
-
-
     async findOne(id: number) {
         const company = await this.prisma.company.findUnique({
             where: {id},
@@ -73,7 +71,6 @@ export class CompanyService {
 
         return company;
     }
-
     async update(id: number, dto: UpdateCompanyDto) {
         try {
             return await this.prisma.company.update({
@@ -96,8 +93,6 @@ export class CompanyService {
             throw e;
         }
     }
-
-
     async remove(id: number) {
         try {
             return await this.prisma.company.delete({

@@ -9,17 +9,17 @@ import {AddScheduleDto} from "./dto/add-schedule.dto";
 import {timeToDate} from "../common/utils/time-to-date";
 import {GroupsLessonsService} from "./groups-lessons.service";
 import {ExtraLessonDto} from "./dto/extra-lesson.dto";
+import {formatTime} from "../common/utils/date-time.util";
+import {mappedUsers} from "../common/helpers/user-map";
+import {UserSelect} from "../users/utils/users.select";
 
 @Injectable()
 export class GroupsService {
     constructor(private prisma: PrismaService, private readonly groupsLessonsService: GroupsLessonsService) {
     }
 
-    private formatTime(date: Date) {
-        return date.toISOString().substring(11, 16);
-    }
-    create(dto: CreateGroupDto) {
-        return this.prisma.group.create(
+    async create(dto: CreateGroupDto) {
+        return await this.prisma.group.create(
             {
                 data: {
                     name: dto.name,
@@ -38,7 +38,6 @@ export class GroupsService {
             }
         )
     }
-
     async findAll(page: number, page_size: number) {
         const skip = (page - 1) * page_size;
 
@@ -63,13 +62,14 @@ export class GroupsService {
         if (!group) {
             throw new BadRequestException('Group not found');
         }
-        return group
+        return {
+            ...group,
+            teachers: mappedUsers(group.teachers)
+        }
     }
-
     update(id: number, updateGroupDto: UpdateGroupDto) {
         return `This action updates a #${id} group`;
     }
-
     async remove(id: number) {
         try {
             return await this.prisma.group.delete({
@@ -82,7 +82,6 @@ export class GroupsService {
             throw e;
         }
     }
-
     async addStudents(groupId: number, dto: AddStudentsDto) {
         return this.prisma.$transaction(async (tx) => {
 
@@ -112,24 +111,31 @@ export class GroupsService {
             return {groupId, added: dto.studentIds.length};
         });
     }
-
     async getStudents(groupId: number) {
         const group = await this.prisma.group.findUnique({
             where: {id: groupId},
             select: {
-                teachers: true,
-                subject: true,
-                students: true
+                students: {
+                    select: {
+                        id: true,
+                        bio: true,
+                        hobby: true,
+                        photo: true,
+                        parents: true,
+                        groups: true,
+                        user: {
+                            select: UserSelect
+                        },
+                    }
+                }
             }
         });
 
         if (!group) {
             throw new Error('Group not found');
         }
-
-        return group;
+        return mappedUsers(group.students)
     }
-
     async removeStudents(groupId: number, studentIds: number[]) {
         return this.prisma.$transaction(async (tx) => {
             const group = await tx.group.findUnique({
@@ -147,13 +153,12 @@ export class GroupsService {
             });
         });
     }
-
-
     async addSchedule(groupId: number, dto: AddScheduleDto) {
         return this.prisma.$transaction(async (tx) => {
             const group = await tx.group.findUnique({
                 where: {id: groupId},
             });
+
             if (!group) {
                 throw new Error("Group not found");
             }
@@ -184,8 +189,8 @@ export class GroupsService {
                 },
             });
 
-            // 🔥 MUHIM JOY — AUTO LESSON CREATE
             await this.groupsLessonsService.generateLessonsFromSchedule(
+                tx,
                 groupId,
                 schedule.id
             );
@@ -193,8 +198,6 @@ export class GroupsService {
             return schedule;
         });
     }
-
-
     async getSchedules(groupId: number) {
         const group = await this.prisma.group.findUnique({
             where: {id: groupId},
@@ -215,12 +218,11 @@ export class GroupsService {
         return group.schedules.map((s) => ({
             id: s.id,
             day: s.day,
-            startTime: this.formatTime(s.startTime),
-            endTime: this.formatTime(s.endTime),
+            startTime: formatTime(s.startTime),
+            endTime: formatTime(s.endTime),
             groupId: s.groupId,
         }));
     }
-
     async deleteSchedule(groupId: number, scheduleId: number) {
         return this.prisma.$transaction(async (tx) => {
             const schedule = await tx.schedule.findUnique({
@@ -231,29 +233,25 @@ export class GroupsService {
                 throw new NotFoundException("Schedule not found");
             }
 
-            // 🔥 Future lessons cancel
-            await tx.lesson.updateMany({
+            const now = new Date();
+
+            await tx.lesson.deleteMany({
                 where: {
                     groupId,
+                    scheduleId,
                     isExtra: false,
                     isDone: false,
-                    date: {
-                        gte: new Date(),
-                    },
-                },
-                data: {
-                    isCanceled: true,
+                    date: {gt: now},
                 },
             });
 
-            return tx.schedule.delete({
+            await tx.schedule.delete({
                 where: {id: scheduleId},
             });
+
+            return {success: true};
         });
     }
-
-
-
     async updateSchedule(
         groupId: number,
         scheduleId: number,
@@ -306,6 +304,7 @@ export class GroupsService {
             });
 
             await this.groupsLessonsService.syncFutureLessonsWithSchedule(
+                tx,
                 groupId,
                 scheduleId
             );
@@ -313,7 +312,6 @@ export class GroupsService {
             return updatedSchedule;
         });
     }
-
     async getLessons(groupId: number) {
         const group = await this.prisma.group.findUnique({
             where: {id: groupId},
@@ -325,7 +323,11 @@ export class GroupsService {
                     ],
                     include: {
                         subject: true,
-                        teacher: true,
+                        teacher: {
+                            include: {
+                                user: true,
+                            },
+                        },
                         room: true,
                     },
                 },
@@ -349,7 +351,6 @@ export class GroupsService {
             room: l.room,
         }));
     }
-
     async createExtraLesson(groupId: number, dto: ExtraLessonDto) {
         return this.groupsLessonsService.createExtraLesson({
             ...dto,

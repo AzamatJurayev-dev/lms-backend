@@ -70,6 +70,7 @@ model Schedule {
   company   Company? @relation(fields: [companyId], references: [id])
   groupId   Int
   group     Group    @relation("GroupSchedules", fields: [groupId], references: [id])
+  lessons   Lesson[]
 }
 
 enum WeekDays {

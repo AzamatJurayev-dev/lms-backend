@@ -4,6 +4,7 @@ import {PrismaService} from "../prisma/prisma.service";
 import {ApiProperty} from "@nestjs/swagger";
 import {UserSelect} from "../users/utils/users.select";
 import {paginate} from "../common/pagination/pagination.helper";
+import {mappedUsers} from "../common/helpers/user-map";
 
 @Injectable()
 export class StudentsService {
@@ -30,15 +31,7 @@ export class StudentsService {
             }),
             this.prisma.student.count()
         ])
-
-        const mappedStudents = students.map(({user, ...student}) => ({
-            ...user,
-            full_name: [user.firstName, user.lastName, user.middleName]
-                .filter(Boolean)
-                .join(' '),
-            ...student,
-        }));
-
+        const mappedStudents = mappedUsers(students)
         return paginate(mappedStudents, total, page, page_size)
     }
 

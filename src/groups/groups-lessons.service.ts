@@ -1,57 +1,27 @@
 import {BadRequestException, Injectable} from "@nestjs/common";
 import {PrismaService} from "../prisma/prisma.service";
-import {WeekDays} from "@prisma/client";
+import {Prisma} from "@prisma/client";
+import {formatTime, timeToDate, today} from "../common/utils/date-time.util";
+import {WEEKDAY_MAP} from "../common/constants/week-days";
 
-/**
- * Group + Schedule + Lesson orchestration service
- * - Auto lesson create
- * - Future lesson sync
- * - Extra lesson create
- */
 @Injectable()
 export class GroupsLessonsService {
     constructor(private readonly prisma: PrismaService) {
     }
 
-    /* ---------------------------------- */
-    /* Helpers                            */
-    /* ---------------------------------- */
-
-    private WEEKDAY_MAP: Record<WeekDays, number> = {
-        sunday: 0,
-        monday: 1,
-        tuesday: 2,
-        wednesday: 3,
-        thursday: 4,
-        friday: 5,
-        saturday: 6,
-    };
-
-    private timeToDate(baseDate: Date, time: string) {
-        const [h, m] = time.split(":").map(Number);
-        const d = new Date(baseDate);
-        d.setHours(h, m, 0, 0);
-        return d;
-    }
-
-    private formatTime(date: Date) {
-        return date.toISOString().substring(11, 16);
-    }
-
-    /* ---------------------------------- */
-    /* AUTO LESSON GENERATION              */
-
-    /* ---------------------------------- */
-
-    /**
-     * Schedule create bo‘lganda chaqiriladi
-     * Group startDate → endDate oralig‘ida auto lesson yaratadi
-     */
-    async generateLessonsFromSchedule(groupId: number, scheduleId: number) {
-        const schedule = await this.prisma.schedule.findUnique({
+    async generateLessonsFromSchedule(
+        tx: Prisma.TransactionClient,
+        groupId: number,
+        scheduleId: number
+    ) {
+        const schedule = await tx.schedule.findUnique({
             where: {id: scheduleId},
             include: {
-                group: true,
+                group: {
+                    include: {
+                        teachers: true
+                    },
+                },
             },
         });
 
@@ -60,65 +30,55 @@ export class GroupsLessonsService {
         }
 
         const {group} = schedule;
-        const targetWeekDay = this.WEEKDAY_MAP[schedule.day];
+        const targetWeekDay = WEEKDAY_MAP[schedule.day];
 
         const lessons: any[] = [];
         let cursor = new Date(group.startDate!);
 
         while (cursor <= group.endDate!) {
             if (cursor.getDay() === targetWeekDay) {
-                const startTime = this.timeToDate(
+                const startTime = timeToDate(
                     cursor,
-                    this.formatTime(schedule.startTime),
+                    formatTime(schedule.startTime),
                 );
 
-                const endTime = this.timeToDate(
+                const endTime = timeToDate(
                     cursor,
-                    this.formatTime(schedule.endTime),
+                    formatTime(schedule.endTime),
                 );
 
                 lessons.push({
                     groupId,
                     subjectId: group.subjectId,
+                    scheduleId: scheduleId,
                     date: new Date(cursor),
                     startTime,
                     endTime,
+                    roomId: group.roomId,
                     isExtra: false,
+                    companyId: group.companyId ?? undefined,
+                    teacherId: group.teachers[0]?.id ?? undefined,
                 });
             }
-
             cursor.setDate(cursor.getDate() + 1);
         }
 
         if (lessons.length) {
-            await this.prisma.lesson.createMany({
+            await tx.lesson.createMany({
                 data: lessons,
-                skipDuplicates: true, // @@unique([groupId, date, startTime])
+                skipDuplicates: true,
             });
         }
 
-        return {
-            createdLessons: lessons.length,
-        };
+        return {createdLessons: lessons.length};
     }
 
-    /* ---------------------------------- */
-    /* SCHEDULE UPDATE → FUTURE LESSONS    */
-
-    /* ---------------------------------- */
-
-    /**
-     * Schedule update bo‘lganda chaqiriladi
-     * Faqat:
-     * - isExtra = false
-     * - isDone = false
-     * - future lessons
-     */
     async syncFutureLessonsWithSchedule(
+        tx: Prisma.TransactionClient,
         groupId: number,
         scheduleId: number,
     ) {
-        const schedule = await this.prisma.schedule.findUnique({
+        const schedule = await tx.schedule.findUnique({
             where: {id: scheduleId},
         });
 
@@ -126,9 +86,7 @@ export class GroupsLessonsService {
             throw new BadRequestException("Schedule not found");
         }
 
-        const today = new Date();
-
-        return this.prisma.lesson.updateMany({
+        return tx.lesson.updateMany({
             where: {
                 groupId,
                 isExtra: false,
@@ -138,33 +96,24 @@ export class GroupsLessonsService {
                 },
             },
             data: {
-                startTime: this.timeToDate(
+                startTime: timeToDate(
                     today,
-                    this.formatTime(schedule.startTime),
+                    formatTime(schedule.startTime),
                 ),
-                endTime: this.timeToDate(
+                endTime: timeToDate(
                     today,
-                    this.formatTime(schedule.endTime),
+                    formatTime(schedule.endTime),
                 ),
             },
         });
     }
 
-    /* ---------------------------------- */
-    /* EXTRA LESSON                        */
-
-    /* ---------------------------------- */
-
-    /**
-     * Qo‘lda extra lesson qo‘shish
-     * Schedule bilan bog‘liq emas
-     */
     async createExtraLesson(dto: {
         groupId: number;
         subjectId: number;
-        date: string;       // YYYY-MM-DD
-        startTime: string;  // HH:mm
-        endTime: string;    // HH:mm
+        date: string;
+        startTime: string;
+        endTime: string;
     }) {
         const date = new Date(dto.date);
 
@@ -173,8 +122,8 @@ export class GroupsLessonsService {
                 groupId: dto.groupId,
                 subjectId: dto.subjectId,
                 date,
-                startTime: this.timeToDate(date, dto.startTime),
-                endTime: this.timeToDate(date, dto.endTime),
+                startTime: timeToDate(date, dto.startTime),
+                endTime: timeToDate(date, dto.endTime),
                 isExtra: true,
             },
         });

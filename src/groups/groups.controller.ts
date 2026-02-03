@@ -38,7 +38,6 @@ export class GroupsController {
     remove(@Param('id', ParseIntPipe) id: number) {
         return this.groupsService.remove(id);
     }
-
     // ---------- STUDENTS ----------
     @Put(':id/students')
     addStudents(
@@ -104,6 +103,4 @@ export class GroupsController {
     ) {
         return this.groupsService.createExtraLesson(groupId, dto);
     }
-
-
 }

@@ -1,6 +1,9 @@
+import {IsInt} from "class-validator";
+
 export class ExtraLessonDto {
+    @IsInt()
     subjectId: number;
-    date: string;      // YYYY-MM-DD
-    startTime: string; // HH:mm
-    endTime: string;   // HH:mm
+    date: string;
+    startTime: string;
+    endTime: string;
 }

@@ -13,6 +13,9 @@ model Lesson {
   roomId Int?
   room   Room? @relation(fields: [roomId], references: [id])
 
+  scheduleId Int?
+  schedule   Schedule? @relation(fields: [scheduleId], references: [id])
+
   date      DateTime
   startTime DateTime
   endTime   DateTime
