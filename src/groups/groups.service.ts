@@ -17,7 +17,6 @@ import {UserSelect} from "../users/utils/users.select";
 export class GroupsService {
     constructor(private prisma: PrismaService, private readonly groupsLessonsService: GroupsLessonsService) {
     }
-
     async create(dto: CreateGroupDto) {
         return await this.prisma.group.create(
             {

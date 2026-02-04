@@ -55,11 +55,10 @@ export class GroupsController {
     @Delete(':id/students')
     removeStudents(
         @Param('id', ParseIntPipe) groupId: number,
-        @Body() dto: { studentIds: number[] }
+        @Body() dto: { ids: number[] }
     ) {
-        return this.groupsService.removeStudents(groupId, dto.studentIds);
+        return this.groupsService.removeStudents(groupId, dto.ids);
     }
-
     // ---------- SCHEDULE ----------
     @Post(':id/schedule')
     addSchedule(
