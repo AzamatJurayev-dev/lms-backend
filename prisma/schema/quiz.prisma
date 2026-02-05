@@ -1,0 +1,59 @@
+enum QuizStatus {
+  CREATED
+  READY
+  STARTED
+  FINISHED
+}
+
+model Quiz {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  groupId  Int
+  group    Group      @relation(fields: [groupId], references: [id])
+  duration Int
+  status   QuizStatus
+  count    Int
+
+  items            QuizItem[]
+  quizLeaderboards QuizLeaderboard[]
+  attempts         Attempt[]
+
+  createdById Int
+  createdBy   User @relation(fields: [createdById], references: [id])
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  startedAt  DateTime?
+  finishedAt DateTime?
+}
+
+model QuizItem {
+  id Int @id @default(autoincrement())
+
+  quizId     Int
+  questionId Int
+  order      Int
+
+  quiz     Quiz     @relation(fields: [quizId], references: [id])
+  question Question @relation(fields: [questionId], references: [id])
+
+  @@unique([quizId, questionId])
+  @@unique([quizId, order])
+  @@index([questionId])
+}
+
+model QuizLeaderboard {
+  id Int @id @default(autoincrement())
+
+  quizId Int
+  userId Int
+
+  score    Int
+  position Int
+
+  quiz Quiz @relation(fields: [quizId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([quizId, userId])
+}

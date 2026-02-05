@@ -15,6 +15,8 @@ import { GroupsModule } from './groups/groups.module';
 import { LevelsModule } from './levels/levels.module';
 import { RoomsModule } from './rooms/rooms.module';
 import { LessonsModule } from './lessons/lessons.module';
+import { QuestionsModule } from './questions/questions.module';
+import { TestsModule } from './tests/tests.module';
 
 @Module({
     imports: [PrismaModule, UsersModule, AuthModule, JwtModule.register({
@@ -22,7 +24,7 @@ import { LessonsModule } from './lessons/lessons.module';
         signOptions: {
             expiresIn: '1d',
         },
-    }), RolesModule, CompanyModule, PermissionsModule, StudentsModule, TeachersModule, SubjectsModule, GroupsModule, LevelsModule, RoomsModule, LessonsModule,],
+    }), RolesModule, CompanyModule, PermissionsModule, StudentsModule, TeachersModule, SubjectsModule, GroupsModule, LevelsModule, RoomsModule, LessonsModule, QuestionsModule, TestsModule,],
     controllers: [AppController],
     providers: [AppService],
 })

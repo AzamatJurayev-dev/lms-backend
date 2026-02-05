@@ -2,6 +2,27 @@
 CREATE TYPE "WeekDays" AS ENUM ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday');
 
 -- CreateEnum
+CREATE TYPE "AttendanceStatus" AS ENUM ('present', 'absent', 'late', 'excused');
+
+-- CreateEnum
+CREATE TYPE "Difficulty" AS ENUM ('LOW', 'MEDIUM', 'HARD');
+
+-- CreateEnum
+CREATE TYPE "QuestionSource" AS ENUM ('PDF', 'MANUAL');
+
+-- CreateEnum
+CREATE TYPE "QuizStatus" AS ENUM ('CREATED', 'READY', 'STARTED', 'FINISHED');
+
+-- CreateEnum
+CREATE TYPE "NotificationType" AS ENUM ('TEST_STARTED', 'TEST_FINISHED', 'QUIZ_STARTED', 'QUIZ_FINISHED', 'RESULT_PUBLISHED', 'SYSTEM');
+
+-- CreateEnum
+CREATE TYPE "TestStatus" AS ENUM ('DRAFT', 'GENERATED', 'PUBLISHED', 'ARCHIVED');
+
+-- CreateEnum
+CREATE TYPE "AttemptTarget" AS ENUM ('TEST', 'QUIZ');
+
+-- CreateEnum
 CREATE TYPE "ParentType" AS ENUM ('father', 'mother', 'guardian');
 
 -- CreateTable
@@ -106,6 +127,116 @@ CREATE TABLE "File" (
 );
 
 -- CreateTable
+CREATE TABLE "Lesson" (
+    "id" SERIAL NOT NULL,
+    "groupId" INTEGER NOT NULL,
+    "subjectId" INTEGER NOT NULL,
+    "teacherId" INTEGER,
+    "roomId" INTEGER,
+    "scheduleId" INTEGER,
+    "date" TIMESTAMP(3) NOT NULL,
+    "startTime" TIMESTAMP(3) NOT NULL,
+    "endTime" TIMESTAMP(3) NOT NULL,
+    "isExtra" BOOLEAN NOT NULL DEFAULT false,
+    "isDone" BOOLEAN NOT NULL DEFAULT false,
+    "isCanceled" BOOLEAN NOT NULL DEFAULT false,
+    "topic" TEXT,
+    "description" TEXT,
+    "homework" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Lesson_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Attendance" (
+    "id" SERIAL NOT NULL,
+    "lessonId" INTEGER NOT NULL,
+    "studentId" INTEGER NOT NULL,
+    "status" "AttendanceStatus" NOT NULL,
+    "comment" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Attendance_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Performance" (
+    "id" SERIAL NOT NULL,
+    "lessonId" INTEGER NOT NULL,
+    "studentId" INTEGER NOT NULL,
+    "score" DOUBLE PRECISION,
+    "grade" TEXT,
+    "comment" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Performance_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Question" (
+    "id" SERIAL NOT NULL,
+    "text" TEXT NOT NULL,
+    "difficulty" "Difficulty" NOT NULL DEFAULT 'LOW',
+    "source" "QuestionSource" NOT NULL DEFAULT 'MANUAL',
+    "subjectId" INTEGER NOT NULL,
+    "createdById" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Question_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Option" (
+    "id" SERIAL NOT NULL,
+    "text" TEXT NOT NULL,
+    "isCorrect" BOOLEAN NOT NULL,
+    "questionId" INTEGER NOT NULL,
+
+    CONSTRAINT "Option_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Quiz" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "groupId" INTEGER NOT NULL,
+    "duration" INTEGER NOT NULL,
+    "status" "QuizStatus" NOT NULL,
+    "count" INTEGER NOT NULL,
+    "createdById" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "startedAt" TIMESTAMP(3),
+    "finishedAt" TIMESTAMP(3),
+
+    CONSTRAINT "Quiz_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "QuizItem" (
+    "id" SERIAL NOT NULL,
+    "quizId" INTEGER NOT NULL,
+    "questionId" INTEGER NOT NULL,
+    "order" INTEGER NOT NULL,
+
+    CONSTRAINT "QuizItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "QuizLeaderboard" (
+    "id" SERIAL NOT NULL,
+    "quizId" INTEGER NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "score" INTEGER NOT NULL,
+    "position" INTEGER NOT NULL,
+
+    CONSTRAINT "QuizLeaderboard_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Role" (
     "id" SERIAL NOT NULL,
     "code" TEXT NOT NULL,
@@ -143,6 +274,65 @@ CREATE TABLE "PermissionTranslation" (
     "permissionId" INTEGER NOT NULL,
 
     CONSTRAINT "PermissionTranslation_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Notification" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "type" "NotificationType" NOT NULL,
+    "title" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "isRead" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Test" (
+    "id" SERIAL NOT NULL,
+    "title" TEXT NOT NULL,
+    "duration" INTEGER NOT NULL,
+    "status" "TestStatus" NOT NULL,
+    "count" INTEGER NOT NULL,
+    "createdById" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Test_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "TestQuestion" (
+    "id" SERIAL NOT NULL,
+    "testId" INTEGER NOT NULL,
+    "questionId" INTEGER NOT NULL,
+
+    CONSTRAINT "TestQuestion_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Attempt" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "targetId" INTEGER NOT NULL,
+    "target" "AttemptTarget" NOT NULL,
+    "score" INTEGER NOT NULL DEFAULT 0,
+    "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "endedAt" TIMESTAMP(3),
+    "quizId" INTEGER,
+
+    CONSTRAINT "Attempt_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AttemptAnswer" (
+    "id" SERIAL NOT NULL,
+    "attemptId" INTEGER NOT NULL,
+    "questionId" INTEGER NOT NULL,
+    "optionId" INTEGER NOT NULL,
+
+    CONSTRAINT "AttemptAnswer_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -246,6 +436,30 @@ CREATE UNIQUE INDEX "Room_code_key" ON "Room"("code");
 CREATE UNIQUE INDEX "Subject_name_key" ON "Subject"("name");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Lesson_groupId_date_startTime_key" ON "Lesson"("groupId", "date", "startTime");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Attendance_lessonId_studentId_key" ON "Attendance"("lessonId", "studentId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Performance_lessonId_studentId_key" ON "Performance"("lessonId", "studentId");
+
+-- CreateIndex
+CREATE INDEX "Question_subjectId_difficulty_idx" ON "Question"("subjectId", "difficulty");
+
+-- CreateIndex
+CREATE INDEX "QuizItem_questionId_idx" ON "QuizItem"("questionId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "QuizItem_quizId_questionId_key" ON "QuizItem"("quizId", "questionId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "QuizItem_quizId_order_key" ON "QuizItem"("quizId", "order");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "QuizLeaderboard_quizId_userId_key" ON "QuizLeaderboard"("quizId", "userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Role_code_key" ON "Role"("code");
 
 -- CreateIndex
@@ -256,6 +470,9 @@ CREATE UNIQUE INDEX "Permission_code_key" ON "Permission"("code");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "PermissionTranslation_permissionId_lang_key" ON "PermissionTranslation"("permissionId", "lang");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "TestQuestion_testId_questionId_key" ON "TestQuestion"("testId", "questionId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
@@ -300,6 +517,60 @@ ALTER TABLE "Schedule" ADD CONSTRAINT "Schedule_groupId_fkey" FOREIGN KEY ("grou
 ALTER TABLE "Subject" ADD CONSTRAINT "Subject_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "Company"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Lesson" ADD CONSTRAINT "Lesson_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "Group"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Lesson" ADD CONSTRAINT "Lesson_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "Subject"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Lesson" ADD CONSTRAINT "Lesson_teacherId_fkey" FOREIGN KEY ("teacherId") REFERENCES "Teacher"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Lesson" ADD CONSTRAINT "Lesson_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "Room"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Lesson" ADD CONSTRAINT "Lesson_scheduleId_fkey" FOREIGN KEY ("scheduleId") REFERENCES "Schedule"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_lessonId_fkey" FOREIGN KEY ("lessonId") REFERENCES "Lesson"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Performance" ADD CONSTRAINT "Performance_lessonId_fkey" FOREIGN KEY ("lessonId") REFERENCES "Lesson"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Performance" ADD CONSTRAINT "Performance_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Question" ADD CONSTRAINT "Question_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "Subject"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Question" ADD CONSTRAINT "Question_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Option" ADD CONSTRAINT "Option_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Question"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Quiz" ADD CONSTRAINT "Quiz_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "Group"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Quiz" ADD CONSTRAINT "Quiz_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "QuizItem" ADD CONSTRAINT "QuizItem_quizId_fkey" FOREIGN KEY ("quizId") REFERENCES "Quiz"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "QuizItem" ADD CONSTRAINT "QuizItem_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Question"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "QuizLeaderboard" ADD CONSTRAINT "QuizLeaderboard_quizId_fkey" FOREIGN KEY ("quizId") REFERENCES "Quiz"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "QuizLeaderboard" ADD CONSTRAINT "QuizLeaderboard_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "RoleTranslation" ADD CONSTRAINT "RoleTranslation_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -307,6 +578,33 @@ ALTER TABLE "Permission" ADD CONSTRAINT "Permission_parentId_fkey" FOREIGN KEY (
 
 -- AddForeignKey
 ALTER TABLE "PermissionTranslation" ADD CONSTRAINT "PermissionTranslation_permissionId_fkey" FOREIGN KEY ("permissionId") REFERENCES "Permission"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Test" ADD CONSTRAINT "Test_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TestQuestion" ADD CONSTRAINT "TestQuestion_testId_fkey" FOREIGN KEY ("testId") REFERENCES "Test"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TestQuestion" ADD CONSTRAINT "TestQuestion_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Question"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Attempt" ADD CONSTRAINT "Attempt_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Attempt" ADD CONSTRAINT "Attempt_quizId_fkey" FOREIGN KEY ("quizId") REFERENCES "Quiz"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AttemptAnswer" ADD CONSTRAINT "AttemptAnswer_attemptId_fkey" FOREIGN KEY ("attemptId") REFERENCES "Attempt"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AttemptAnswer" ADD CONSTRAINT "AttemptAnswer_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Question"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AttemptAnswer" ADD CONSTRAINT "AttemptAnswer_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE SET NULL ON UPDATE CASCADE;

@@ -21,8 +21,14 @@ model User {
   companyId Int?
   company   Company? @relation(fields: [companyId], references: [id])
 
-  student Student?
-  teacher Teacher?
+  student          Student?
+  teacher          Teacher?
+  quizLeaderboards QuizLeaderboard[]
+  notifications    Notification[]
+  attempts         Attempt[]
+  questions        Question[]
+  quizzes          Quiz[]
+  tests            Test[]
 }
 
 model Teacher {

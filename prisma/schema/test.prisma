@@ -1,0 +1,66 @@
+enum TestStatus {
+  DRAFT
+  GENERATED
+  PUBLISHED
+  ARCHIVED
+}
+
+model Test {
+  id          Int            @id @default(autoincrement())
+  title       String
+  duration    Int
+  status      TestStatus
+  count       Int
+  questions   TestQuestion[]
+  createdById Int
+  createdBy   User           @relation(fields: [createdById], references: [id])
+  createdAt   DateTime       @default(now())
+}
+
+model TestQuestion {
+  id Int @id @default(autoincrement())
+
+  testId     Int
+  questionId Int
+
+  test     Test     @relation(fields: [testId], references: [id])
+  question Question @relation(fields: [questionId], references: [id])
+
+  @@unique([testId, questionId])
+}
+
+model Attempt {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  targetId Int
+  target   AttemptTarget
+
+  score Int @default(0)
+
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  answers AttemptAnswer[]
+  quiz    Quiz?           @relation(fields: [quizId], references: [id])
+  quizId  Int?
+}
+
+model AttemptAnswer {
+  id Int @id @default(autoincrement())
+
+  attemptId  Int
+  questionId Int
+  optionId   Int
+
+  attempt  Attempt  @relation(fields: [attemptId], references: [id])
+  question Question @relation(fields: [questionId], references: [id])
+  option   Option   @relation(fields: [optionId], references: [id])
+}
+
+enum AttemptTarget {
+  TEST
+  QUIZ
+}
