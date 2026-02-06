@@ -1,22 +1,24 @@
-import {Body, Controller, Delete, Get, Param, Patch, Post} from '@nestjs/common';
+import {Body, Controller, Delete, Get, Param, Patch, Post, UseGuards} from '@nestjs/common';
 import {QuestionsService} from './questions.service';
 import {CreateQuestionDto} from './dto/create-question.dto';
 import {UpdateQuestionDto} from './dto/update-question.dto';
 import {CurrentUser} from "../auth/current-user";
+import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 
 @Controller('questions')
 export class QuestionsController {
     constructor(private readonly questionsService: QuestionsService) {
     }
 
+    @UseGuards(JwtAuthGuard)
     @Post()
     create(@Body() dto: CreateQuestionDto, @CurrentUser() user: any) {
         return this.questionsService.create(dto, user);
     }
 
     @Get()
-    findAll() {
-        return this.questionsService.findAll();
+    findAll(@Param() query: any) {
+        return this.questionsService.findAll(query);
     }
 
     @Get(':id')

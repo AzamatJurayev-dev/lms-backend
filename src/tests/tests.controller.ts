@@ -1,15 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { TestsService } from './tests.service';
-import { CreateTestDto } from './dto/create-test.dto';
-import { UpdateTestDto } from './dto/update-test.dto';
+import {Body, Controller, Delete, Get, Param, Patch, Post, UseGuards} from '@nestjs/common';
+import {TestsService} from './tests.service';
+import {CreateTestDto} from './dto/create-test.dto';
+import {UpdateTestDto} from './dto/update-test.dto';
+import {CurrentUser} from "../auth/current-user";
+import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 
+@UseGuards(JwtAuthGuard)
 @Controller('tests')
 export class TestsController {
   constructor(private readonly testsService: TestsService) {}
 
   @Post()
-  create(@Body() createTestDto: CreateTestDto) {
-    return this.testsService.create(createTestDto);
+  create(@Body() dto: CreateTestDto, @CurrentUser() user: any) {
+    return this.testsService.create(dto, user);
   }
 
   @Get()
