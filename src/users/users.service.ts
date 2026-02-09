@@ -9,31 +9,57 @@ import * as bcrypt from 'bcrypt';
 import { paginate } from '../common/pagination/pagination.helper';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserSelect } from './utils/users.select';
+import { buildQuery } from '../common/query/query.helper';
+import { CurrentUserType } from '../common/types/current-user.type';
 
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async getAll(page: number, page_size: number) {
-    const skip = (page - 1) * page_size;
+  async getAll(query: any, user: CurrentUserType) {
+    const q = buildQuery(
+      {
+        page: query.page,
+        pageSize: query.pageSize,
+        ordering: query.ordering,
+        search: query.search,
+        date_from: query.date_from,
+        date_to: query.date_to,
+        filters: {
+          isActive: query.isActive,
+        },
+      },
+      {
+        allowedOrderFields: ['name', 'code', 'createdAt', 'isActive'],
+        allowedFilterFields: ['isActive'],
+        searchableFields: ['name', 'code', 'email', 'phone'],
+        defaultOrderBy: { createdAt: 'desc' },
+        dateField: 'createdAt',
+      },
+    );
 
-    const [users, total] = await Promise.all([
+    const where: any = {
+      ...q.where,
+    };
+
+    if (user.role.code !== 'super_admin' && user.companyId !== null) {
+      where.companyId = user.companyId;
+    }
+
+    const [items, total] = await this.prisma.$transaction([
       this.prisma.user.findMany({
-        skip,
-        take: page_size,
+        skip: q.skip,
+        take: q.take,
+        where,
+        orderBy: q.orderBy,
         select: UserSelect,
       }),
-      this.prisma.user.count(),
+      this.prisma.user.count({
+        where,
+      }),
     ]);
 
-    const mappedUsers = users.map((user) => ({
-      ...user,
-      full_name: [user.firstName, user.lastName, user.middleName]
-        .filter(Boolean)
-        .join(' '),
-    }));
-
-    return paginate(mappedUsers, total, page, page_size);
+    return paginate(items, total, q.page, q.pageSize);
   }
 
   async findById(id: number) {

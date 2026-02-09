@@ -3,6 +3,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ContextInterceptor } from './common/interceptors/context.interceptor';
+import cookieParser from 'cookie-parser';
 
 const config = new DocumentBuilder()
   .setTitle('Admin API')
@@ -25,9 +27,16 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalInterceptors(new ResponseInterceptor());
-  app.enableCors();
+  app.useGlobalInterceptors(
+    new ContextInterceptor(),
+    new ResponseInterceptor(),
+  );
+  app.enableCors({
+    origin: 'http://localhost:5173',
+    credentials: true,
+  });
 
+  app.use(cookieParser());
   await app.listen(process.env.PORT || 8080);
 }
 

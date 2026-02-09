@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { AttemptTarget } from '@prisma/client';
 
 @Injectable()
 export class QuizzesService {
@@ -10,7 +11,10 @@ export class QuizzesService {
   async create(dto: CreateQuizDto, user: { id: number }) {
     return this.prisma.quiz.create({
       data: {
-        ...dto,
+        name: dto.name,
+        groupId: dto.groupId,
+        duration: dto.duration,
+        count: dto.count,
         createdById: user.id,
         status: 'CREATED',
       },
@@ -81,14 +85,16 @@ export class QuizzesService {
 
     const where = {
       quizId,
-      question: query.search
-        ? {
+      ...(query.search && {
+        question: {
+          is: {
             text: {
               contains: query.search,
               mode: 'insensitive',
             },
-          }
-        : undefined,
+          },
+        },
+      }),
     };
 
     const [items, total] = await this.prisma.$transaction([
@@ -126,5 +132,89 @@ export class QuizzesService {
     });
 
     return { message: 'Questions removed from quiz' };
+  }
+
+  async getStats(id: number) {
+    const quiz = await this.prisma.quiz.findUnique({
+      where: { id },
+      include: {
+        items: true,
+      },
+    });
+
+    if (!quiz) {
+      throw new Error('Quiz not found');
+    }
+
+    const attempts = await this.prisma.attempt.findMany({
+      where: {
+        target: AttemptTarget.QUIZ,
+        quizId: id,
+      },
+    });
+
+    const totalAttempts = attempts.length;
+    const scores = attempts.map((a) => a.score);
+    const sum = scores.reduce((acc, v) => acc + v, 0);
+
+    const questionIds = quiz.items.map((i) => i.questionId);
+
+    if (!questionIds.length) {
+      return {
+        totalAttempts,
+        averageScore: totalAttempts ? sum / totalAttempts : 0,
+        maxScore: scores.length ? Math.max(...scores) : 0,
+        minScore: scores.length ? Math.min(...scores) : 0,
+        questions: [],
+      };
+    }
+
+    const answers = await this.prisma.attemptAnswer.findMany({
+      where: {
+        questionId: {
+          in: questionIds,
+        },
+      },
+      include: {
+        option: true,
+      },
+    });
+
+    const statsByQuestion = new Map<
+      number,
+      { attempts: number; correct: number }
+    >();
+
+    for (const ans of answers) {
+      const stat = statsByQuestion.get(ans.questionId) ?? {
+        attempts: 0,
+        correct: 0,
+      };
+      stat.attempts += 1;
+      if (ans.option.isCorrect) {
+        stat.correct += 1;
+      }
+      statsByQuestion.set(ans.questionId, stat);
+    }
+
+    const questionStats = questionIds.map((qid) => {
+      const stat = statsByQuestion.get(qid) ?? { attempts: 0, correct: 0 };
+      const accuracy = stat.attempts === 0 ? 0 : stat.correct / stat.attempts;
+
+      return {
+        questionId: qid,
+        attempts: stat.attempts,
+        correct: stat.correct,
+        accuracy,
+      };
+    });
+
+    return {
+      totalAttempts,
+      averageScore: totalAttempts ? sum / totalAttempts : 0,
+      maxScore: scores.length ? Math.max(...scores) : 0,
+      minScore: scores.length ? Math.min(...scores) : 0,
+      questions: questionStats,
+    };
   }
 }

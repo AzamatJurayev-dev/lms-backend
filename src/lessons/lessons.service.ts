@@ -226,4 +226,85 @@ export class LessonsService {
             }
         })
     }
+
+    async getTeacherSchedule(
+        userId: number,
+        query: { date_from?: string; date_to?: string },
+    ) {
+        const teacher = await this.prisma.teacher.findUnique({
+            where: {id: userId},
+        });
+
+        if (!teacher) {
+            throw new Error('Teacher not found');
+        }
+
+        const where: any = {
+            teacherId: teacher.id,
+        };
+
+        if (query.date_from || query.date_to) {
+            where.date = {};
+            if (query.date_from) {
+                where.date.gte = new Date(query.date_from);
+            }
+            if (query.date_to) {
+                const to = new Date(query.date_to);
+                to.setHours(23, 59, 59, 999);
+                where.date.lte = to;
+            }
+        }
+
+        return this.prisma.lesson.findMany({
+            where,
+            orderBy: {
+                date: 'asc',
+            },
+            select: LessonSelect,
+        });
+    }
+
+    async getStudentSchedule(
+        userId: number,
+        query: { date_from?: string; date_to?: string },
+    ) {
+        const student = await this.prisma.student.findUnique({
+            where: {id: userId},
+            include: {
+                groups: true,
+            },
+        });
+
+        if (!student) {
+            throw new Error('Student not found');
+        }
+
+        const groupIds = student.groups.map((g) => g.id);
+
+        const where: any = {
+            groupId: {
+                in: groupIds,
+            },
+        };
+
+        if (query.date_from || query.date_to) {
+            where.date = {};
+            if (query.date_from) {
+                where.date.gte = new Date(query.date_from);
+            }
+            if (query.date_to) {
+                const to = new Date(query.date_to);
+                to.setHours(23, 59, 59, 999);
+                where.date.lte = to;
+            }
+        }
+
+        return this.prisma.lesson.findMany({
+            where,
+            orderBy: {
+                date: 'asc',
+            },
+            select: LessonSelect,
+        });
+    }
 }

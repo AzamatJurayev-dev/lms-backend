@@ -1,0 +1,34 @@
+model CertificateTemplate {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  html     String?
+  isActive Boolean @default(true)
+
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  certificates Certificate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Certificate {
+  id Int @id @default(autoincrement())
+
+  studentId Int
+  student   Student @relation(fields: [studentId], references: [id])
+
+  groupId Int
+  group   Group @relation(fields: [groupId], references: [id])
+
+  templateId Int
+  template   CertificateTemplate @relation(fields: [templateId], references: [id])
+
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  issuedAt DateTime @default(now())
+  fileUrl  String?
+}

@@ -13,8 +13,9 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ParamsDTO } from '../common/query/query-dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/current-user';
+import * as currentUserType from '../common/types/current-user.type';
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
@@ -27,8 +28,11 @@ export class UsersController {
   }
 
   @Get()
-  findAll(@Query() query: ParamsDTO) {
-    return this.usersService.getAll(query?.page ?? 1, query?.page_size ?? 10);
+  findAll(
+    @Query() query: any,
+    @CurrentUser() user: currentUserType.CurrentUserType,
+  ) {
+    return this.usersService.getAll(query, user);
   }
 
   @Get('me')

@@ -28,7 +28,7 @@ export class TestsController {
   }
 
   @Get()
-  findAll(@Param() query: any) {
+  findAll(@Query() query: any) {
     return this.testsService.findAll(query);
   }
 
@@ -65,5 +65,10 @@ export class TestsController {
   @Get(':id/questions')
   getQuestions(@Param('id', ParseIntPipe) id: number, @Query() query: any) {
     return this.testsService.getQuestions(id, query);
+  }
+
+  @Get(':id/stats')
+  getStats(@Param('id', ParseIntPipe) id: number) {
+    return this.testsService.getStats(id);
   }
 }

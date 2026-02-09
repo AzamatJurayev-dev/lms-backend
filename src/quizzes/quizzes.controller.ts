@@ -63,4 +63,9 @@ export class QuizzesController {
   ) {
     return this.quizzesService.removeQuestions(id, dto);
   }
+
+  @Get(':id/stats')
+  getStats(@Param('id', ParseIntPipe) id: number) {
+    return this.quizzesService.getStats(id);
+  }
 }

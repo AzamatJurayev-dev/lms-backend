@@ -1,0 +1,14 @@
+model File {
+  id       Int    @id @default(autoincrement())
+  name     String
+  original String
+  mimeType String
+  size     Int
+  path     String
+  bucket   String
+
+  companyId  Int?
+  uploadedBy Int?
+
+  createdAt DateTime @default(now())
+}

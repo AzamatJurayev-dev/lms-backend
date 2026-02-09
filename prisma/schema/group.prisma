@@ -20,13 +20,17 @@ model Group {
   subjectId Int
   subject   Subject @relation(fields: [subjectId], references: [id])
 
-  companyId Int?
-  company   Company?   @relation(fields: [companyId], references: [id])
-  lessons   Lesson[]
-  teachers  Teacher[]
-  students  Student[]
-  schedules Schedule[] @relation("GroupSchedules")
-  quizzes   Quiz[]
+  companyId    Int?
+  company      Company?         @relation(fields: [companyId], references: [id])
+  lessons      Lesson[]
+  teachers     Teacher[]
+  students     Student[]
+  schedules    Schedule[]       @relation("GroupSchedules")
+  quizzes      Quiz[]
+  chatRooms    ChatRoom[]
+  payments     StudentPayment[]
+  groupFee     GroupFee?
+  certificates Certificate[]
 }
 
 model Level {
@@ -97,13 +101,4 @@ model Subject {
   updatedAt   DateTime   @updatedAt
   lessons     Lesson[]
   questions   Question[]
-}
-
-model File {
-  id          Int      @id @default(autoincrement())
-  file        String
-  fileType    String
-  fileSize    Int
-  contentType String
-  createdAt   DateTime @default(now())
 }

@@ -4,7 +4,6 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { JwtModule } from '@nestjs/jwt';
 import { RolesModule } from './roles/roles.module';
 import { CompanyModule } from './company/company.module';
 import { PermissionsModule } from './permissions/permissions.module';
@@ -19,18 +18,17 @@ import { QuestionsModule } from './questions/questions.module';
 import { TestsModule } from './tests/tests.module';
 import { QuizzesModule } from './quizzes/quizzes.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ChatModule } from './chat/chat.module';
+import { PaymentsModule } from './payments/payments.module';
+import { CertificatesModule } from './certificates/certificates.module';
+import { FilesModule } from './files/files.module';
+import { MinioModule } from './minio/minio.module';
 
 @Module({
   imports: [
     PrismaModule,
     UsersModule,
     AuthModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'secret123',
-      signOptions: {
-        expiresIn: '1d',
-      },
-    }),
     RolesModule,
     CompanyModule,
     PermissionsModule,
@@ -45,6 +43,11 @@ import { NotificationsModule } from './notifications/notifications.module';
     TestsModule,
     QuizzesModule,
     NotificationsModule,
+    ChatModule,
+    PaymentsModule,
+    CertificatesModule,
+    MinioModule,
+    FilesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

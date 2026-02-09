@@ -1,11 +1,25 @@
-import {Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post} from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    ParseIntPipe,
+    Patch,
+    Post,
+    Query,
+    UseGuards,
+} from '@nestjs/common';
 import {LessonsService} from './lessons.service';
 import {CreateLessonDto} from './dto/create-lesson.dto';
 import {UpdateLessonDto} from './dto/update-lesson.dto';
 import {ApiOperation, ApiResponse} from "@nestjs/swagger";
 import {BulkAttendanceDto} from "./dto/create-lesson-attendance.dto";
 import {BulkPerformanceDto} from "./dto/create-performance.dto";
+import {JwtAuthGuard} from "../auth/jwt-auth.guard";
+import {CurrentUser} from "../auth/current-user";
 
+@UseGuards(JwtAuthGuard)
 @Controller('lessons')
 export class LessonsController {
     constructor(private readonly lessonsService: LessonsService) {
@@ -17,8 +31,24 @@ export class LessonsController {
     }
 
     @Get()
-    findAll(@Param() query: any) {
+    findAll(@Query() query: any) {
         return this.lessonsService.findAll(query);
+    }
+
+    @Get('schedule/teacher')
+    getTeacherSchedule(
+        @CurrentUser() user: any,
+        @Query() query: { date_from?: string; date_to?: string },
+    ) {
+        return this.lessonsService.getTeacherSchedule(user.id, query);
+    }
+
+    @Get('schedule/student')
+    getStudentSchedule(
+        @CurrentUser() user: any,
+        @Query() query: { date_from?: string; date_to?: string },
+    ) {
+        return this.lessonsService.getStudentSchedule(user.id, query);
     }
 
     @Get(':id')

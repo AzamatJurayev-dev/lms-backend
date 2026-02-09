@@ -8,7 +8,7 @@ import { UpdateTestDto } from './dto/update-test.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { buildQuery } from '../common/query/query.helper';
 import { paginate } from '../common/pagination/pagination.helper';
-import { Prisma } from '@prisma/client';
+import { AttemptTarget, Prisma } from '@prisma/client';
 import { AddTestQuestionsDto } from './dto/add-test-questions.dto';
 
 @Injectable()
@@ -147,10 +147,12 @@ export class TestsService {
           dateField: 'createdAt',
         },
       );
+
       const where = {
         testId,
         question: q.where,
       };
+
       const [items, total] = await this.prisma.$transaction([
         this.prisma.testQuestion.findMany({
           skip: q.skip,
@@ -159,13 +161,13 @@ export class TestsService {
           orderBy: q.orderBy,
         }),
         this.prisma.testQuestion.count({
-          where: q.where,
+          where,
         }),
       ]);
 
       return paginate(items, total, q.page, q.pageSize);
     } catch (error) {
-      console.error(error);
+      throw new NotFoundException(`Questions for test ${testId} not found`);
     }
   }
 
@@ -187,5 +189,42 @@ export class TestsService {
     });
 
     return { message: 'Questions removed from test' };
+  }
+
+  async getStats(id: number) {
+    const test = await this.prisma.test.findUnique({
+      where: { id },
+    });
+
+    if (!test) {
+      throw new NotFoundException(`Test with id ${id} not found`);
+    }
+
+    const attempts = await this.prisma.attempt.findMany({
+      where: {
+        target: AttemptTarget.TEST,
+        targetId: id,
+      },
+    });
+
+    if (!attempts.length) {
+      return {
+        totalAttempts: 0,
+        averageScore: 0,
+        maxScore: 0,
+        minScore: 0,
+      };
+    }
+
+    const scores = attempts.map((a) => a.score);
+    const totalAttempts = attempts.length;
+    const sum = scores.reduce((acc, v) => acc + v, 0);
+
+    return {
+      totalAttempts,
+      averageScore: sum / totalAttempts,
+      maxScore: Math.max(...scores),
+      minScore: Math.min(...scores),
+    };
   }
 }

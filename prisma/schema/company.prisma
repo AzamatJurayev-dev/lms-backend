@@ -15,13 +15,18 @@ model Company {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  users     User[]
-  groups    Group[]
-  levels    Level[]
-  rooms     Room[]
-  schedules Schedule[]
-  subjects  Subject[]
-  teachers  Teacher[]
-  students  Student[]
-  parents   Parent[]
+  users                User[]
+  groups               Group[]
+  levels               Level[]
+  rooms                Room[]
+  schedules            Schedule[]
+  subjects             Subject[]
+  teachers             Teacher[]
+  students             Student[]
+  parents              Parent[]
+  chatRooms            ChatRoom[]
+  studentPayments      StudentPayment[]
+  groupFees            GroupFee[]
+  certificateTemplates CertificateTemplate[]
+  certificates         Certificate[]
 }
