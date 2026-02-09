@@ -10,7 +10,6 @@ model Test {
   title       String
   duration    Int
   status      TestStatus
-  count       Int
   questions   TestQuestion[]
   createdById Int
   createdBy   User           @relation(fields: [createdById], references: [id])

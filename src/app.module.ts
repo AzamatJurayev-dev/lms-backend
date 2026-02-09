@@ -1,10 +1,10 @@
-import {Module} from '@nestjs/common';
-import {AppController} from './app.controller';
-import {AppService} from './app.service';
-import {PrismaModule} from './prisma/prisma.module';
-import {UsersModule} from './users/users.module';
-import {AuthModule} from './auth/auth.module';
-import {JwtModule} from "@nestjs/jwt";
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { PrismaModule } from './prisma/prisma.module';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
+import { JwtModule } from '@nestjs/jwt';
 import { RolesModule } from './roles/roles.module';
 import { CompanyModule } from './company/company.module';
 import { PermissionsModule } from './permissions/permissions.module';
@@ -17,16 +17,36 @@ import { RoomsModule } from './rooms/rooms.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { QuestionsModule } from './questions/questions.module';
 import { TestsModule } from './tests/tests.module';
+import { QuizzesModule } from './quizzes/quizzes.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
-    imports: [PrismaModule, UsersModule, AuthModule, JwtModule.register({
-        secret: process.env.JWT_SECRET || 'secret123',
-        signOptions: {
-            expiresIn: '1d',
-        },
-    }), RolesModule, CompanyModule, PermissionsModule, StudentsModule, TeachersModule, SubjectsModule, GroupsModule, LevelsModule, RoomsModule, LessonsModule, QuestionsModule, TestsModule,],
-    controllers: [AppController],
-    providers: [AppService],
+  imports: [
+    PrismaModule,
+    UsersModule,
+    AuthModule,
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'secret123',
+      signOptions: {
+        expiresIn: '1d',
+      },
+    }),
+    RolesModule,
+    CompanyModule,
+    PermissionsModule,
+    StudentsModule,
+    TeachersModule,
+    SubjectsModule,
+    GroupsModule,
+    LevelsModule,
+    RoomsModule,
+    LessonsModule,
+    QuestionsModule,
+    TestsModule,
+    QuizzesModule,
+    NotificationsModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
 })
-export class AppModule {
-}
+export class AppModule {}
