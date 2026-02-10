@@ -19,7 +19,8 @@ export class AuthController {
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
     });
 
     return {

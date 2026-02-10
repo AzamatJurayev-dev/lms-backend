@@ -24,7 +24,7 @@ import { ApiBody, ApiConsumes } from '@nestjs/swagger';
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
-  @Post('upload')
+  @Post()
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -33,7 +33,7 @@ export class FilesController {
       properties: {
         file: {
           type: 'string',
-          format: 'binary', // 🔥 FILE INPUT
+          format: 'binary',
         },
       },
       required: ['file'],
@@ -69,9 +69,17 @@ export class FilesController {
     stream.pipe(res);
   }
 
-  // 🗑 DELETE
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
     return this.filesService.remove(id, user);
+  }
+  @Get(':id/preview')
+  @UseGuards(JwtAuthGuard)
+  async preview(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: any,
+  ) {
+    const url = await this.filesService.getPreviewUrl(id, user);
+    return { url };
   }
 }

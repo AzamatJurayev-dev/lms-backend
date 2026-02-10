@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -6,6 +7,7 @@ import {
 import { MinioService } from '../minio/minio.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { v4 as uuid } from 'uuid';
+import { paginate } from '../common/pagination/pagination.helper';
 
 @Injectable()
 export class FilesService {
@@ -14,12 +16,25 @@ export class FilesService {
     private readonly prisma: PrismaService,
   ) {}
 
-  // 📤 UPLOAD
   async upload(file: Express.Multer.File, user: any) {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+
     const ext = file.originalname.split('.').pop();
     const filename = `${uuid()}.${ext}`;
     const bucket = process.env.MINIO_BUCKET!;
-    const path = `company/${user.companyId}/${filename}`;
+
+    let path: string;
+
+    if (user.role === 'super_admin') {
+      path = `system/${filename}`;
+    } else {
+      if (!user.companyId) {
+        throw new BadRequestException('User has no company');
+      }
+      path = `company/${user.companyId}/${filename}`;
+    }
 
     await this.minioService.upload(bucket, path, file.buffer, file.mimetype);
 
@@ -31,7 +46,7 @@ export class FilesService {
         size: file.size,
         path,
         bucket,
-        companyId: user.companyId,
+        companyId: user.companyId ?? null,
         uploadedBy: user.id,
       },
     });
@@ -52,18 +67,16 @@ export class FilesService {
       }),
     ]);
 
-    return {
-      items,
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    const baseUrl = process.env.MINIO_PUBLIC_URL;
+
+    const thumbItems = items.map((file) => ({
+      ...file,
+      thumbnailUrl: `${baseUrl}/${file.path}`,
+    }));
+
+    return paginate(thumbItems, page, limit, total);
   }
 
-  // 📥 GET FILE
   async getFileStream(fileId: number, user: any) {
     const file = await this.prisma.file.findUnique({
       where: { id: fileId },
@@ -85,7 +98,6 @@ export class FilesService {
     };
   }
 
-  // 🗑 DELETE
   async remove(fileId: number, user: any) {
     const file = await this.prisma.file.findUnique({
       where: { id: fileId },
@@ -105,5 +117,20 @@ export class FilesService {
     });
 
     return { success: true };
+  }
+
+  async getPreviewUrl(id: number, user: any): Promise<string> {
+    const file = await this.prisma.file.findUnique({
+      where: { id },
+    });
+
+    if (!file) {
+      throw new NotFoundException('File not found');
+    }
+    if (user.role !== 'super_admin' && file.companyId !== user.companyId) {
+      throw new ForbiddenException();
+    }
+
+    return this.minioService.getPresignedUrl(file.bucket, file.path, 60 * 5);
   }
 }

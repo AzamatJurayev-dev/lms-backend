@@ -23,6 +23,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { CertificatesModule } from './certificates/certificates.module';
 import { FilesModule } from './files/files.module';
 import { MinioModule } from './minio/minio.module';
+import { PlansModule } from './plans/plans.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { MinioModule } from './minio/minio.module';
     CertificatesModule,
     MinioModule,
     FilesModule,
+    PlansModule,
   ],
   controllers: [AppController],
   providers: [AppService],

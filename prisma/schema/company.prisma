@@ -29,4 +29,5 @@ model Company {
   groupFees            GroupFee[]
   certificateTemplates CertificateTemplate[]
   certificates         Certificate[]
+  subscriptions        Subscription[]
 }

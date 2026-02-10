@@ -1,0 +1,16 @@
+model Subscription {
+  id        Int @id @default(autoincrement())
+  companyId Int
+  planId    Int
+
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+  plan    Plan    @relation(fields: [planId], references: [id])
+
+  @@index([companyId, isActive])
+}

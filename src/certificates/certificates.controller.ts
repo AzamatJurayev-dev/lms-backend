@@ -10,32 +10,35 @@ import {
 import { CertificatesService } from './certificates.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user';
-import { StreamableFile } from '@nestjs/common';
 
-@UseGuards(JwtAuthGuard)
 @Controller('certificates')
+@UseGuards(JwtAuthGuard)
 export class CertificatesController {
-  constructor(private readonly certificatesService: CertificatesService) {}
+  constructor(private readonly service: CertificatesService) {}
 
   @Post()
   issue(
+    @Body()
+    dto: {
+      studentId: number;
+      groupId: number;
+      templateId: number;
+    },
     @CurrentUser() user: any,
-    @Body() dto: { studentId: number; groupId: number },
   ) {
-    // user hozircha faqat audit uchun ishlatilmayapti
-    return this.certificatesService.issueCertificate(dto);
-  }
-
-  @Get(':id/pdf')
-  async downloadPdf(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<StreamableFile> {
-    const buffer = await this.certificatesService.generateCertificatePdf(id);
-
-    return new StreamableFile(buffer, {
-      type: 'application/pdf',
-      disposition: `attachment; filename="certificate-${id}.pdf"`,
+    return this.service.issueCertificate({
+      ...dto,
+      companyId: user.companyId ?? null,
     });
   }
-}
 
+  @Get()
+  findAll(@CurrentUser() user: any) {
+    return this.service.findAll(user.companyId);
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.service.findOne(id);
+  }
+}

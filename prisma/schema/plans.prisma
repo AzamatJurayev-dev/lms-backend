@@ -1,0 +1,21 @@
+model Plan {
+  id          Int     @id @default(autoincrement())
+  code        String  @unique // BASIC, PRO, PREMIUM
+  name        String
+  description String?
+
+  // limitlar
+  maxGroups    Int
+  maxStudents  Int
+  maxTeachers  Int
+  maxStorageMb Int // 🔥 storage limiti (MB)
+
+  price        Int // oyiga (so'm yoki cent)
+  durationDays Int // 30, 90, 365
+  isActive     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscriptions Subscription[]
+}

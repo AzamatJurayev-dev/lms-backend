@@ -7,8 +7,9 @@ model File {
   path     String
   bucket   String
 
-  companyId  Int?
-  uploadedBy Int?
+  companyId    Int?
+  uploadedById Int?
+  uploadedBy   User? @relation(fields: [uploadedById], references: [id])
 
   createdAt DateTime @default(now())
 }

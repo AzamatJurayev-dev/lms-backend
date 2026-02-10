@@ -45,4 +45,3 @@ export class ChatController {
     return this.chatService.getRoomMessages(id, user.id, query);
   }
 }
-
