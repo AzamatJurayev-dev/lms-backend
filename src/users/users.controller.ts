@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -15,7 +16,9 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user';
+import type { CurrentUserType } from '../common/types/current-user.type';
 import * as currentUserType from '../common/types/current-user.type';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
@@ -53,5 +56,13 @@ export class UsersController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.usersService.remove(+id);
+  }
+
+  @Patch('change-password')
+  async changePassword(
+    @CurrentUser() user: CurrentUserType,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.usersService.changePassword(user, dto);
   }
 }

@@ -24,6 +24,7 @@ import { CertificatesModule } from './certificates/certificates.module';
 import { FilesModule } from './files/files.module';
 import { MinioModule } from './minio/minio.module';
 import { PlansModule } from './plans/plans.module';
+import { ParentsModule } from './parents/parents.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { PlansModule } from './plans/plans.module';
     MinioModule,
     FilesModule,
     PlansModule,
+    ParentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

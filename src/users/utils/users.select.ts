@@ -8,6 +8,7 @@ export const UserSelect = Prisma.validator<Prisma.UserSelect>()({
   middleName: true,
   role: {
     select: {
+      id: true,
       code: true,
     },
   },

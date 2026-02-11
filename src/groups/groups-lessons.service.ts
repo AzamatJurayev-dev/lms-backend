@@ -32,7 +32,7 @@ export class GroupsLessonsService {
     const targetWeekDay = WEEKDAY_MAP[schedule.day];
 
     const lessons: any[] = [];
-    let cursor = new Date(group.startDate!);
+    const cursor = new Date(group.startDate!);
 
     while (cursor <= group.endDate!) {
       if (cursor.getDay() === targetWeekDay) {

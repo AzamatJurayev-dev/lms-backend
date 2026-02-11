@@ -47,7 +47,11 @@ export class FilesService {
         path,
         bucket,
         companyId: user.companyId ?? null,
-        uploadedBy: user.id,
+        uploadedBy: {
+          connect: {
+            id: user.id,
+          },
+        },
       },
     });
   }
@@ -55,24 +59,29 @@ export class FilesService {
   async getAll(user: any, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
 
+    const where =
+      user.role === 'super_admin' ? {} : { companyId: user.companyId };
+
     const [items, total] = await this.prisma.$transaction([
       this.prisma.file.findMany({
-        where: { companyId: user.companyId },
+        where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      this.prisma.file.count({
-        where: { companyId: user.companyId },
-      }),
+      this.prisma.file.count({ where }),
     ]);
 
-    const baseUrl = process.env.MINIO_PUBLIC_URL;
-
-    const thumbItems = items.map((file) => ({
-      ...file,
-      thumbnailUrl: `${baseUrl}/${file.path}`,
-    }));
+    const thumbItems = await Promise.all(
+      items.map(async (file) => ({
+        ...file,
+        thumbnailUrl: await this.minioService.getPresignedUrl(
+          file.bucket,
+          file.path,
+          60 * 5,
+        ),
+      })),
+    );
 
     return paginate(thumbItems, page, limit, total);
   }
@@ -130,7 +139,6 @@ export class FilesService {
     if (user.role !== 'super_admin' && file.companyId !== user.companyId) {
       throw new ForbiddenException();
     }
-
     return this.minioService.getPresignedUrl(file.bucket, file.path, 60 * 5);
   }
 }

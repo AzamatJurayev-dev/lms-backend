@@ -19,8 +19,9 @@ export class AuthController {
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: true, // NGROK HTTPS bo‘lgani uchun true
+      sameSite: 'none', // cross-site uchun shart
+      path: '/',
     });
 
     return {
@@ -31,7 +32,13 @@ export class AuthController {
 
   @Post('logout')
   logout(@Res({ passthrough: true }) res: express.Response) {
-    res.clearCookie('access_token');
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: true, // LOGIN BILAN BIR XIL
+      sameSite: 'none', // LOGIN BILAN BIR XIL
+      path: '/',
+    });
+
     return { success: true };
   }
 }
