@@ -74,7 +74,12 @@ export class UsersService {
       throw new BadRequestException('User not found');
     }
 
-    return user;
+    return {
+      ...user,
+      full_name: [user.firstName, user.lastName, user.middleName]
+        .filter(Boolean)
+        .join(' '),
+    };
   }
 
   async create(dto: CreateUserDto) {
