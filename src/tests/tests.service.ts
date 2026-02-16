@@ -113,62 +113,60 @@ export class TestsService {
     if (questions.length !== dto.questionIds.length) {
       throw new BadRequestException('Some questions not found');
     }
-    await this.prisma.testQuestion.createMany({
-      data: dto.questionIds.map((questionId, index) => ({
-        testId,
-        questionId,
-        order: index + 1,
-      })),
-      skipDuplicates: true,
+    return this.prisma.test.update({
+      where: {
+        id: testId,
+      },
+      data: {
+        questions: {
+          connect: dto.questionIds.map((id) => ({ id })),
+        },
+      },
     });
-
-    return { message: 'Questions added to test' };
   }
 
   async getQuestions(testId: number, query: any) {
-    try {
-      const q = buildQuery(
-        {
-          page: query.page,
-          pageSize: query.pageSize,
-          ordering: query.ordering,
-          search: query.search,
-          date_from: query.date_from,
-          date_to: query.date_to,
-          filters: {
-            isActive: query.isActive,
-          },
+    const q = buildQuery(
+      {
+        page: query.page,
+        pageSize: query.pageSize,
+        ordering: query.ordering,
+        search: query.search,
+        date_from: query.date_from,
+        date_to: query.date_to,
+        filters: {
+          isActive: query.isActive,
         },
-        {
-          allowedOrderFields: ['name', 'code', 'createdAt', 'isActive'],
-          allowedFilterFields: ['isActive'],
-          searchableFields: ['name', 'code', 'email', 'phone'],
-          defaultOrderBy: { createdAt: 'desc' },
-          dateField: 'createdAt',
-        },
-      );
+      },
+      {
+        allowedOrderFields: ['name', 'code', 'createdAt', 'isActive'],
+        allowedFilterFields: ['isActive'],
+        searchableFields: ['name', 'code', 'email', 'phone'],
+        defaultOrderBy: { createdAt: 'desc' },
+        dateField: 'createdAt',
+      },
+    );
 
-      const where = {
-        testId,
-        question: q.where,
-      };
+    const where: any = {
+      ...q.where,
+      test: {
+        where: { id: testId },
+      },
+    };
 
-      const [items, total] = await this.prisma.$transaction([
-        this.prisma.testQuestion.findMany({
-          skip: q.skip,
-          take: q.take,
-          where,
-          orderBy: q.orderBy,
-        }),
-        this.prisma.testQuestion.count({
-          where,
-        }),
-      ]);
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.question.findMany({
+        skip: q.skip,
+        take: q.take,
+        where,
+        orderBy: q.orderBy,
+      }),
+      this.prisma.testQuestion.count({
+        where,
+      }),
+    ]);
 
-      return paginate(items, total, q.page, q.pageSize);
-    } catch {
-      throw new NotFoundException(`Questions for test ${testId} not found`);
-    }
+    return paginate(items, total, q.page, q.pageSize);
   }
 
   async removeQuestions(testId: number, dto: { questionIds: number[] }) {

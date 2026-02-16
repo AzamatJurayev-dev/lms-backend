@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { CreateLessonDto } from './dto/create-lesson.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { buildQuery } from '../common/query/query.helper';
 import { paginate } from '../common/pagination/pagination.helper';
@@ -11,15 +10,11 @@ import {
 } from './dto/create-lesson-attendance.dto';
 import { BulkPerformanceDto } from './dto/create-performance.dto';
 import { timeToDate } from '../common/utils/date-time.util';
-import { ExtraLessonDto } from '../groups/dto/extra-lesson.dto';
+import { ExtraLessonDto } from './dto/extra-lesson.dto';
 
 @Injectable()
 export class LessonsService {
   constructor(private readonly prisma: PrismaService) {}
-
-  create(createLessonDto: CreateLessonDto) {
-    return 'This action adds a new lesson';
-  }
 
   async findAll(query: any) {
     const q = buildQuery(

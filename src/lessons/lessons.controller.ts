@@ -16,7 +16,7 @@ import { BulkAttendanceDto } from './dto/create-lesson-attendance.dto';
 import { BulkPerformanceDto } from './dto/create-performance.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user';
-import { ExtraLessonDto } from '../groups/dto/extra-lesson.dto';
+import { ExtraLessonDto } from './dto/extra-lesson.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('lessons')
