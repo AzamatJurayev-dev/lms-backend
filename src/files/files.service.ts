@@ -75,7 +75,7 @@ export class FilesService {
     const thumbItems = await Promise.all(
       items.map(async (file) => ({
         ...file,
-        thumbnailUrl: await this.minioService.getPresignedUrl(
+        url: await this.minioService.getPresignedUrl(
           file.bucket,
           file.path,
           60 * 5,

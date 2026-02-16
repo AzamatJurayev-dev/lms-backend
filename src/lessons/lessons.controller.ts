@@ -6,6 +6,7 @@ import {
   Param,
   ParseIntPipe,
   Patch,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -15,6 +16,7 @@ import { BulkAttendanceDto } from './dto/create-lesson-attendance.dto';
 import { BulkPerformanceDto } from './dto/create-performance.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user';
+import { ExtraLessonDto } from '../groups/dto/extra-lesson.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('lessons')
@@ -55,6 +57,10 @@ export class LessonsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.lessonsService.remove(+id);
+  }
+  @Post('extra')
+  createExtraLesson(@Body() dto: ExtraLessonDto) {
+    return this.lessonsService.createExtraLesson(dto);
   }
 
   @Patch('attendance')

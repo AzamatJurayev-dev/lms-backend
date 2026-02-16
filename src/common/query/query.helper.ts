@@ -18,29 +18,39 @@ interface BuildQueryOptions {
   searchableFields?: readonly string[];
   defaultOrderBy?: Record<string, Order>;
   dateField?: string;
+  virtualOrderFields?: Record<string, (order: Order) => any>;
 }
 
 export function buildQuery(query: QueryOptions, options: BuildQueryOptions) {
   const page = Math.max(Number(query.page) || 1, 1);
   const pageSize = Math.min(Number(query.pageSize) || 10, 100);
   const skip = (page - 1) * pageSize;
+
   let orderBy = options.defaultOrderBy;
 
   if (query.ordering) {
     const isDesc = query.ordering.startsWith('-');
     const field = isDesc ? query.ordering.slice(1) : query.ordering;
+    const order: Order = isDesc ? 'desc' : 'asc';
 
-    if (!options.allowedOrderFields.includes(field)) {
+    if (options.virtualOrderFields?.[field]) {
+      orderBy = options.virtualOrderFields[field](order);
+    } else if (options.allowedOrderFields.includes(field)) {
+      orderBy = { [field]: order };
+    } else {
       throw new BadRequestException(`Invalid ordering field: ${field}`);
     }
-
-    orderBy = { [field]: isDesc ? 'desc' : 'asc' };
   }
+
   const where: Record<string, any> = {};
   if (options.allowedFilterFields) {
     for (const key of options.allowedFilterFields) {
       if (query.filters?.[key] !== undefined) {
-        where[key] = query.filters[key];
+        const value = query.filters[key];
+
+        if (value === 'true') where[key] = true;
+        else if (value === 'false') where[key] = false;
+        else where[key] = value;
       }
     }
   }

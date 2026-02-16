@@ -94,25 +94,4 @@ export class GroupsLessonsService {
       },
     });
   }
-
-  async createExtraLesson(dto: {
-    groupId: number;
-    subjectId: number;
-    date: string;
-    startTime: string;
-    endTime: string;
-  }) {
-    const date = new Date(dto.date);
-
-    return this.prisma.lesson.create({
-      data: {
-        groupId: dto.groupId,
-        subjectId: dto.subjectId,
-        date,
-        startTime: timeToDate(date, dto.startTime),
-        endTime: timeToDate(date, dto.endTime),
-        isExtra: true,
-      },
-    });
-  }
 }

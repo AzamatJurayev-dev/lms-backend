@@ -10,6 +10,7 @@ model User {
   phoneNumber String?
 
   isActive          Boolean @default(true)
+  isSystem          Boolean @default(false)
   canChangePassword Boolean @default(true)
 
   createdAt DateTime @default(now())
@@ -52,12 +53,13 @@ model Teacher {
 }
 
 model Student {
-  id    Int     @id
-  bio   String?
-  hobby String?
-  photo String?
+  id        Int       @id
+  bio       String?
+  hobby     String?
+  birthDate DateTime?
+  address   String?
 
-  user User @relation(fields: [id], references: [id])
+  user User @relation(fields: [id], references: [id], onDelete: Cascade)
 
   companyId    Int?
   company      Company?         @relation(fields: [companyId], references: [id])

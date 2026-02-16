@@ -99,6 +99,15 @@ export class TeachersService {
           },
         },
       },
+      select: {
+        id: true,
+        day: true,
+        startTime: true,
+        endTime: true,
+        companyId: true,
+        groupId: true,
+        group: true,
+      },
     });
   }
 

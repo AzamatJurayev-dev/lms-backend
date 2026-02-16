@@ -48,7 +48,6 @@ export class StudentsService {
           id: true,
           bio: true,
           hobby: true,
-          photo: true,
           parents: true,
           groups: true,
           user: {

@@ -4,9 +4,9 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
-  Put,
   Query,
   Req,
   UseGuards,
@@ -48,14 +48,14 @@ export class UsersController {
     return this.usersService.findById(+id);
   }
 
-  @Put(':id')
+  @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(+id, updateUserDto);
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.remove(id);
   }
 
   @Patch('change-password')

@@ -25,7 +25,6 @@ import { FilesModule } from './files/files.module';
 import { MinioModule } from './minio/minio.module';
 import { PlansModule } from './plans/plans.module';
 import { ParentsModule } from './parents/parents.module';
-import { SchedulesModule } from './schedules/schedules.module';
 
 @Module({
   imports: [
@@ -53,7 +52,6 @@ import { SchedulesModule } from './schedules/schedules.module';
     FilesModule,
     PlansModule,
     ParentsModule,
-    SchedulesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

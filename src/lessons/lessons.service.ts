@@ -10,6 +10,8 @@ import {
   BulkAttendanceDto,
 } from './dto/create-lesson-attendance.dto';
 import { BulkPerformanceDto } from './dto/create-performance.dto';
+import { timeToDate } from '../common/utils/date-time.util';
+import { ExtraLessonDto } from '../groups/dto/extra-lesson.dto';
 
 @Injectable()
 export class LessonsService {
@@ -76,6 +78,21 @@ export class LessonsService {
 
   remove(id: number) {
     return `This action removes a #${id} lesson`;
+  }
+
+  async createExtraLesson(dto: ExtraLessonDto) {
+    const date = new Date(dto.date);
+
+    return this.prisma.lesson.create({
+      data: {
+        groupId: dto.groupId,
+        subjectId: dto.subjectId,
+        date,
+        startTime: timeToDate(date, dto.startTime),
+        endTime: timeToDate(date, dto.endTime),
+        isExtra: true,
+      },
+    });
   }
 
   async addBulkAttendance(dto: BulkAttendanceDto) {

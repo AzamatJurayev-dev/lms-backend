@@ -31,6 +31,7 @@ export class RolesService {
           })),
         },
         isPublic: dto.isPublic,
+        isSystem: true,
         permissions: {
           connect: dto.permission_ids.map((id) => ({ id })),
         },
@@ -53,7 +54,7 @@ export class RolesService {
 
   async getAll(lang: string) {
     const roles = await this.prisma.role.findMany({
-      where: { isSystem: false },
+      where: { isSystem: true },
       select: {
         id: true,
         code: true,

@@ -32,7 +32,7 @@ async function bootstrap() {
     new ResponseInterceptor(),
   );
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: ['https://lms-nine-mu.vercel.app', 'http://localhost:5173'],
     credentials: true,
   });
 

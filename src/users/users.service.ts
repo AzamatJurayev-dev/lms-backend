@@ -32,11 +32,23 @@ export class UsersService {
         },
       },
       {
-        allowedOrderFields: ['name', 'code', 'createdAt', 'isActive'],
+        allowedOrderFields: ['firstName', 'lastName', 'middleName', 'isActive'],
         allowedFilterFields: ['isActive'],
-        searchableFields: ['name', 'code', 'email', 'phone'],
+        searchableFields: [
+          'firstName',
+          'lastName',
+          'middleName',
+          'phoneNumber',
+        ],
         defaultOrderBy: { createdAt: 'desc' },
         dateField: 'createdAt',
+        virtualOrderFields: {
+          full_name: (order) => [
+            { firstName: order },
+            { lastName: order },
+            { middleName: order },
+          ],
+        },
       },
     );
 
@@ -61,7 +73,14 @@ export class UsersService {
       }),
     ]);
 
-    return paginate(items, total, q.page, q.pageSize);
+    const mappedUsers = items.map((item) => ({
+      ...item,
+      full_name: [item.firstName, item.lastName, item.middleName]
+        .filter(Boolean)
+        .join(' '),
+    }));
+
+    return paginate(mappedUsers, total, q.page, q.pageSize);
   }
 
   async findById(id: number) {
@@ -144,12 +163,16 @@ export class UsersService {
   }
 
   async update(id: number, dto: UpdateUserDto) {
-    await this.findById(id);
+    const { confirmPassword, password, ...rest } = dto;
 
-    const data: any = { ...dto };
+    if (password && password !== confirmPassword) {
+      throw new BadRequestException('Passwords do not match');
+    }
 
-    if (dto.password) {
-      data.password = await bcrypt.hash(dto.password, 10);
+    const data: any = { ...rest };
+
+    if (password) {
+      data.password = await bcrypt.hash(password, 10);
     }
 
     return this.prisma.user.update({

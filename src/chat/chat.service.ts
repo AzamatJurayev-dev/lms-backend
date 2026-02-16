@@ -1,73 +1,115 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ChatService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /* ===============================
+     GET MY ROOMS
+  =============================== */
   async getMyRooms(userId: number) {
     const participants = await this.prisma.chatParticipant.findMany({
       where: { userId },
       include: {
-        room: true,
+        room: {
+          include: {
+            participants: {
+              include: {
+                user: true,
+              },
+            },
+            messages: {
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+            },
+          },
+        },
       },
       orderBy: {
-        room: {
-          updatedAt: 'desc',
-        },
+        room: { updatedAt: 'desc' },
       },
     });
 
     return participants.map((p) => p.room);
   }
 
+  /* ===============================
+     CREATE ROOM
+  =============================== */
   async createRoom(
     userId: number,
     dto: {
       type: 'PRIVATE' | 'GROUP';
       name?: string;
       memberIds?: number[];
-      groupId?: number;
     },
   ) {
+    if (dto.type === 'GROUP' && !dto.name) {
+      throw new BadRequestException('Group name is required');
+    }
+
+    /* ---- PRIVATE duplicate check ---- */
+    if (dto.type === 'PRIVATE' && dto.memberIds?.length === 1) {
+      const targetUserId = dto.memberIds[0];
+
+      const existing = await this.prisma.chatRoom.findFirst({
+        where: {
+          type: 'PRIVATE',
+          participants: {
+            every: {
+              userId: {
+                in: [userId, targetUserId],
+              },
+            },
+          },
+        },
+        include: { participants: true },
+      });
+
+      if (existing && existing.participants.length === 2) {
+        return existing;
+      }
+    }
+
     const memberIds = Array.from(
       new Set([userId, ...(dto.memberIds ?? [])]),
-    ).filter((id) => id !== userId || (dto.memberIds ?? []).length === 0);
+    );
 
     const room = await this.prisma.chatRoom.create({
       data: {
         type: dto.type,
         name: dto.name,
-        groupId: dto.groupId,
         createdById: userId,
+        participants: {
+          create: memberIds.map((id) => ({
+            userId: id,
+          })),
+        },
       },
-    });
-
-    await this.prisma.chatParticipant.createMany({
-      data: memberIds.map((id) => ({
-        roomId: room.id,
-        userId: id,
-      })),
-      skipDuplicates: true,
     });
 
     return room;
   }
 
+  /* ===============================
+     GET ROOM MESSAGES
+  =============================== */
   async getRoomMessages(
     roomId: number,
     userId: number,
     query: { page?: number; pageSize?: number },
   ) {
     const participant = await this.prisma.chatParticipant.findFirst({
-      where: {
-        roomId,
-        userId,
-      },
+      where: { roomId, userId },
     });
 
     if (!participant) {
-      throw new ForbiddenException('You are not a participant of this room');
+      throw new ForbiddenException();
     }
 
     const page = Number(query.page) || 1;
@@ -80,20 +122,47 @@ export class ChatService {
         take: pageSize,
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.chatMessage.count({
-        where: { roomId },
-      }),
+      this.prisma.chatMessage.count({ where: { roomId } }),
     ]);
 
     return {
-      results: items,
+      results: items.reverse(),
       meta: {
+        total,
         page,
         pageSize,
-        total,
         totalPages: Math.ceil(total / pageSize),
       },
     };
   }
-}
 
+  /* ===============================
+     CREATE MESSAGE
+  =============================== */
+  async createMessage(
+    userId: number,
+    roomId: number,
+    text: string,
+  ) {
+    const participant = await this.prisma.chatParticipant.findFirst({
+      where: { roomId, userId },
+    });
+
+    if (!participant) throw new ForbiddenException();
+
+    const message = await this.prisma.chatMessage.create({
+      data: {
+        text,
+        roomId,
+        senderId: userId,
+      },
+    });
+
+    await this.prisma.chatRoom.update({
+      where: { id: roomId },
+      data: { updatedAt: new Date() },
+    });
+
+    return message;
+  }
+}

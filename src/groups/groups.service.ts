@@ -12,7 +12,6 @@ import { AddStudentsDto } from './dto/add-students.dto';
 import { AddScheduleDto } from './dto/add-schedule.dto';
 import { timeToDate } from '../common/utils/time-to-date';
 import { GroupsLessonsService } from './groups-lessons.service';
-import { ExtraLessonDto } from './dto/extra-lesson.dto';
 import { formatTime } from '../common/utils/date-time.util';
 import { mappedUsers } from '../common/helpers/user-map';
 import { UserSelect } from '../users/utils/users.select';
@@ -128,7 +127,6 @@ export class GroupsService {
             id: true,
             bio: true,
             hobby: true,
-            photo: true,
             parents: true,
             groups: true,
             user: {
@@ -354,11 +352,5 @@ export class GroupsService {
       teacher: l.teacher,
       room: l.room,
     }));
-  }
-  async createExtraLesson(groupId: number, dto: ExtraLessonDto) {
-    return this.groupsLessonsService.createExtraLesson({
-      ...dto,
-      groupId,
-    });
   }
 }
