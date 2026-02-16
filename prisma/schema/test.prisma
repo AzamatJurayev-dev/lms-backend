@@ -9,7 +9,7 @@ model Test {
   id          Int            @id @default(autoincrement())
   title       String
   duration    Int
-  status      TestStatus
+  status      TestStatus     @default(DRAFT)
   questions   TestQuestion[]
   createdById Int
   createdBy   User           @relation(fields: [createdById], references: [id])

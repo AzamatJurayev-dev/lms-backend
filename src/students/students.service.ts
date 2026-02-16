@@ -26,11 +26,23 @@ export class StudentsService {
         },
       },
       {
-        allowedOrderFields: ['name', 'code', 'createdAt', 'isActive'],
+        allowedOrderFields: ['firstName', 'lastName', 'middleName', 'isActive'],
         allowedFilterFields: ['isActive'],
-        searchableFields: ['name', 'code', 'email', 'phone'],
+        searchableFields: [
+          'firstName',
+          'lastName',
+          'middleName',
+          'phoneNumber',
+        ],
         defaultOrderBy: { createdAt: 'desc' },
         dateField: 'createdAt',
+        virtualOrderFields: {
+          full_name: (order) => [
+            { firstName: order },
+            { lastName: order },
+            { middleName: order },
+          ],
+        },
       },
     );
 
@@ -44,6 +56,11 @@ export class StudentsService {
 
     const [students, total] = await Promise.all([
       this.prisma.student.findMany({
+        where: {
+          user: {
+            ...where,
+          },
+        },
         select: {
           id: true,
           bio: true,

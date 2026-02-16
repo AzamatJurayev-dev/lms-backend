@@ -13,15 +13,15 @@ import {
   UpdateTeacherDto,
   UpdateTeacherSubjectDto,
 } from './dto/update-teacher.dto';
-import { ParamsDTO } from '../common/query/query-dto';
+import type { CurrentUserType } from '../common/types/current-user.type';
 
 @Controller('teachers')
 export class TeachersController {
   constructor(private readonly teachersService: TeachersService) {}
 
   @Get()
-  findAll(@Query() query: ParamsDTO) {
-    return this.teachersService.findAll(query.page ?? 1, query.page_size ?? 10);
+  findAll(@Query() query: any, user: CurrentUserType) {
+    return this.teachersService.findAll(query, user);
   }
 
   @Get(':id')

@@ -1,0 +1,41 @@
+model Exam {
+  id       Int    @id @default(autoincrement())
+  title    String
+  duration Int?
+
+  questions Question[]
+  attempts  ExamAttempt[]
+
+  createdAt DateTime @default(now())
+}
+
+model ExamAttempt {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  examId Int
+
+  score Int @default(0)
+
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  exam    Exam         @relation(fields: [examId], references: [id])
+  answers ExamAnswer[]
+
+  @@index([userId, examId])
+}
+
+model ExamAnswer {
+  id Int @id @default(autoincrement())
+
+  attemptId  Int
+  questionId Int
+
+  answerText String?
+
+  attempt  ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Question    @relation(fields: [questionId], references: [id])
+
+  @@unique([attemptId, questionId])
+}

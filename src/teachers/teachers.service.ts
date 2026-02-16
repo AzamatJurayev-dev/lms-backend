@@ -8,20 +8,66 @@ import { UserSelect } from '../users/utils/users.select';
 import { PrismaService } from '../prisma/prisma.service';
 import { paginate } from '../common/pagination/pagination.helper';
 import { mappedUsers } from '../common/helpers/user-map';
+import { buildQuery } from '../common/query/query.helper';
+import type { CurrentUserType } from '../common/types/current-user.type';
 
 @Injectable()
 export class TeachersService {
   constructor(private prisma: PrismaService) {}
 
   @ApiProperty()
-  async findAll(page: number, page_size: number) {
-    const skip = (page - 1) * page_size;
+  async findAll(query: any, user: CurrentUserType) {
+    const q = buildQuery(
+      {
+        page: query.page,
+        pageSize: query.pageSize,
+        ordering: query.ordering,
+        search: query.search,
+        date_from: query.date_from,
+        date_to: query.date_to,
+        filters: {
+          isActive: query.isActive,
+        },
+      },
+      {
+        allowedOrderFields: ['firstName', 'lastName', 'middleName', 'isActive'],
+        allowedFilterFields: ['isActive'],
+        searchableFields: [
+          'firstName',
+          'lastName',
+          'middleName',
+          'phoneNumber',
+        ],
+        defaultOrderBy: { createdAt: 'desc' },
+        dateField: 'createdAt',
+        virtualOrderFields: {
+          full_name: (order) => [
+            { firstName: order },
+            { lastName: order },
+            { middleName: order },
+          ],
+        },
+      },
+    );
+
+    const where: any = {
+      ...q.where,
+    };
+
+    if (user?.role?.code !== 'super_admin' && user?.companyId !== null) {
+      where.companyId = user?.companyId;
+    }
+
     const [teachers, total] = await Promise.all([
       this.prisma.teacher.findMany({
+        where: {
+          user: {
+            ...where,
+          },
+        },
         select: {
           id: true,
           bio: true,
-          photo: true,
           groups: true,
           subjects: true,
           experience: true,
@@ -34,7 +80,7 @@ export class TeachersService {
     ]);
 
     const mappedTeachers = mappedUsers(teachers);
-    return paginate(mappedTeachers, total, page, page_size);
+    return paginate(mappedTeachers, total, q.page, q.pageSize);
   }
 
   findOne(id: number) {
@@ -43,7 +89,6 @@ export class TeachersService {
       select: {
         id: true,
         bio: true,
-        photo: true,
         groups: true,
         subjects: true,
         experience: true,

@@ -28,6 +28,9 @@ model Question {
   quizItems      QuizItem[]
   testQuestions  TestQuestion[]
   attemptAnswers AttemptAnswer[]
+  exam           Exam?           @relation(fields: [examId], references: [id])
+  examId         Int?
+  examAnswers    ExamAnswer[]
 
   @@index([subjectId, difficulty])
 }

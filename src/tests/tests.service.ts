@@ -166,7 +166,7 @@ export class TestsService {
       ]);
 
       return paginate(items, total, q.page, q.pageSize);
-    } catch (error) {
+    } catch {
       throw new NotFoundException(`Questions for test ${testId} not found`);
     }
   }

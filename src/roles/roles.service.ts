@@ -6,6 +6,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
+import { buildQuery } from '../common/query/query.helper';
+import { paginate } from '../common/pagination/pagination.helper';
 
 @Injectable()
 export class RolesService {
@@ -31,7 +33,7 @@ export class RolesService {
           })),
         },
         isPublic: dto.isPublic,
-        isSystem: true,
+        isSystem: false,
         permissions: {
           connect: dto.permission_ids.map((id) => ({ id })),
         },
@@ -52,28 +54,57 @@ export class RolesService {
     });
   }
 
-  async getAll(lang: string) {
-    const roles = await this.prisma.role.findMany({
-      where: { isSystem: true },
-      select: {
-        id: true,
-        code: true,
-        translations: {
-          where: {
-            lang: { in: [lang, 'en'] },
-          },
-          select: {
-            lang: true,
-            name: true,
-          },
+  async findAll(query: any, lang: string) {
+    const q = buildQuery(
+      {
+        page: query.page,
+        pageSize: query.pageSize,
+        ordering: query.ordering,
+        search: query.search,
+        filters: {
+          isActive: query.isActive,
         },
-        isActive: true,
-        isPublic: true,
-        permissions: true,
       },
-    });
+      {
+        allowedOrderFields: ['isActive'],
+        allowedFilterFields: ['isActive'],
+        searchableFields: ['code'],
+      },
+    );
 
-    return roles.map((role) => {
+    const where: any = {
+      ...q.where,
+      isSystem: false,
+    };
+    const [roles, total] = await Promise.all([
+      this.prisma.role.findMany({
+        skip: q.skip,
+        take: q.take,
+        where,
+        orderBy: q.orderBy,
+        select: {
+          id: true,
+          code: true,
+          translations: {
+            where: {
+              lang: { in: [lang, 'en'] },
+            },
+            select: {
+              lang: true,
+              name: true,
+            },
+          },
+          isActive: true,
+          isPublic: true,
+          permissions: true,
+        },
+      }),
+      this.prisma.role.count({
+        where,
+      }),
+    ]);
+
+    const mappedRoles = roles.map((role) => {
       const t =
         role.translations.find((t) => t.lang === lang) ??
         role.translations.find((t) => t.lang === 'en');
@@ -86,6 +117,8 @@ export class RolesService {
         isPublic: role.isPublic,
       };
     });
+
+    return paginate(mappedRoles, total, q.page, q.pageSize);
   }
 
   async findOne(id: number) {

@@ -24,9 +24,7 @@ model User {
 
   student          Student?
   teacher          Teacher?
-  quizLeaderboards QuizLeaderboard[]
   notifications    Notification[]
-  attempts         Attempt[]
   questions        Question[]
   quizzes          Quiz[]
   tests            Test[]
@@ -34,6 +32,8 @@ model User {
   chatParticipants ChatParticipant[]
   chatMessages     ChatMessage[]     @relation("ChatMessageSender")
   files            File[]
+  quizLeaderboards QuizLeaderboard[]
+  attempts         Attempt[]
 }
 
 model Teacher {
