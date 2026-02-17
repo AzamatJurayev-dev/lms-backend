@@ -1,8 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { AttemptTarget } from '@prisma/client';
 
 @Injectable()
 export class QuizzesService {
@@ -14,7 +13,6 @@ export class QuizzesService {
         name: dto.name,
         groupId: dto.groupId,
         duration: dto.duration,
-        count: dto.count,
         createdById: user.id,
         status: 'CREATED',
       },
@@ -143,36 +141,49 @@ export class QuizzesService {
     });
 
     if (!quiz) {
-      throw new Error('Quiz not found');
+      throw new NotFoundException('Quiz not found');
     }
 
-    const attempts = await this.prisma.attempt.findMany({
+    // ==============================
+    // 1️⃣ Attempt statistikasi (aggregate)
+    // ==============================
+    const aggregate = await this.prisma.quizAttempt.aggregate({
       where: {
-        target: AttemptTarget.QUIZ,
         quizId: id,
+        endedAt: { not: null }, // faqat tugaganlar
       },
+      _count: { id: true },
+      _avg: { score: true },
+      _max: { score: true },
+      _min: { score: true },
     });
 
-    const totalAttempts = attempts.length;
-    const scores = attempts.map((a) => a.score);
-    const sum = scores.reduce((acc, v) => acc + v, 0);
+    const totalAttempts = aggregate._count.id ?? 0;
 
+    // ==============================
+    // 2️⃣ Agar savol yo‘q bo‘lsa
+    // ==============================
     const questionIds = quiz.items.map((i) => i.questionId);
 
     if (!questionIds.length) {
       return {
         totalAttempts,
-        averageScore: totalAttempts ? sum / totalAttempts : 0,
-        maxScore: scores.length ? Math.max(...scores) : 0,
-        minScore: scores.length ? Math.min(...scores) : 0,
+        averageScore: aggregate._avg.score ?? 0,
+        maxScore: aggregate._max.score ?? 0,
+        minScore: aggregate._min.score ?? 0,
         questions: [],
       };
     }
 
-    const answers = await this.prisma.attemptAnswer.findMany({
+    // ==============================
+    // 3️⃣ Savollar bo‘yicha javob statistikasi
+    // ==============================
+    const answers = await this.prisma.quizAttemptAnswer.findMany({
       where: {
-        questionId: {
-          in: questionIds,
+        questionId: { in: questionIds },
+        attempt: {
+          quizId: id,
+          endedAt: { not: null },
         },
       },
       include: {
@@ -190,30 +201,38 @@ export class QuizzesService {
         attempts: 0,
         correct: 0,
       };
+
       stat.attempts += 1;
+
       if (ans.option.isCorrect) {
         stat.correct += 1;
       }
+
       statsByQuestion.set(ans.questionId, stat);
     }
 
     const questionStats = questionIds.map((qid) => {
-      const stat = statsByQuestion.get(qid) ?? { attempts: 0, correct: 0 };
-      const accuracy = stat.attempts === 0 ? 0 : stat.correct / stat.attempts;
+      const stat = statsByQuestion.get(qid) ?? {
+        attempts: 0,
+        correct: 0,
+      };
 
       return {
         questionId: qid,
         attempts: stat.attempts,
         correct: stat.correct,
-        accuracy,
+        accuracy:
+          stat.attempts === 0
+            ? 0
+            : Number((stat.correct / stat.attempts).toFixed(2)),
       };
     });
 
     return {
       totalAttempts,
-      averageScore: totalAttempts ? sum / totalAttempts : 0,
-      maxScore: scores.length ? Math.max(...scores) : 0,
-      minScore: scores.length ? Math.min(...scores) : 0,
+      averageScore: aggregate._avg.score ?? 0,
+      maxScore: aggregate._max.score ?? 0,
+      minScore: aggregate._min.score ?? 0,
       questions: questionStats,
     };
   }

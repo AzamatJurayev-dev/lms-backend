@@ -82,6 +82,8 @@ export class LessonsService {
       data: {
         groupId: dto.groupId,
         subjectId: dto.subjectId,
+        teacherId: dto.teacherId,
+        roomId: dto.roomId,
         date,
         startTime: timeToDate(date, dto.startTime),
         endTime: timeToDate(date, dto.endTime),

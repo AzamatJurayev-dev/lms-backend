@@ -1,0 +1,74 @@
+model TestAttempt {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  testId Int
+  test   Test @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  score  Int     @default(0)
+  passed Boolean @default(false)
+
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  answers TestAttemptAnswer[]
+
+  @@index([userId])
+  @@index([testId])
+  @@index([startedAt])
+}
+
+model TestAttemptAnswer {
+  id Int @id @default(autoincrement())
+
+  attemptId  Int
+  questionId Int
+  optionId   Int
+
+  attempt  TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Question    @relation(fields: [questionId], references: [id])
+  option   Option      @relation(fields: [optionId], references: [id])
+  user     User?       @relation(fields: [userId], references: [id])
+  userId   Int?
+
+  @@unique([attemptId, questionId])
+  @@index([questionId])
+}
+
+model QuizAttempt {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  quizId Int
+  quiz   Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  score Int @default(0)
+
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  answers QuizAttemptAnswer[]
+
+  @@index([userId])
+  @@index([quizId])
+}
+
+model QuizAttemptAnswer {
+  id Int @id @default(autoincrement())
+
+  attemptId  Int
+  questionId Int
+  optionId   Int
+
+  attempt  QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Question    @relation(fields: [questionId], references: [id])
+  option   Option      @relation(fields: [optionId], references: [id])
+  user     User?       @relation(fields: [userId], references: [id])
+  userId   Int?
+
+  @@unique([attemptId, questionId])
+}

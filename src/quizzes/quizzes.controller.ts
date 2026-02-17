@@ -13,10 +13,14 @@ import {
 import { QuizzesService } from './quizzes.service';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
+import { QuizAttemptsService } from './quiz-attempts.service';
 
 @Controller('quizzes')
 export class QuizzesController {
-  constructor(private readonly quizzesService: QuizzesService) {}
+  constructor(
+    private readonly quizzesService: QuizzesService,
+    private readonly quizAttemptsService: QuizAttemptsService,
+  ) {}
 
   @Post()
   create(@Body() dto: CreateQuizDto, @Req() req: any) {
@@ -64,6 +68,36 @@ export class QuizzesController {
     return this.quizzesService.removeQuestions(id, dto);
   }
 
+  @Post(':id/attempts/start')
+  startQuiz(@Param('id', ParseIntPipe) quizId: number, @Req() req) {
+    return this.quizAttemptsService.start(req.user.id, quizId);
+  }
+
+  // ===============================
+  // SAVE ANSWER
+  // ===============================
+  @Patch('attempts/:attemptId/answer')
+  saveAnswer(
+    @Param('attemptId', ParseIntPipe) attemptId: number,
+    @Body()
+    body: { questionId: number; optionId: number },
+    @Req() req,
+  ) {
+    return this.quizAttemptsService.saveAnswer(
+      req.user.id,
+      attemptId,
+      body.questionId,
+      body.optionId,
+    );
+  }
+
+  // ===============================
+  // FINISH QUIZ
+  // ===============================
+  @Post('attempts/:attemptId/finish')
+  finishQuiz(@Param('attemptId', ParseIntPipe) attemptId: number, @Req() req) {
+    return this.quizAttemptsService.finish(req.user.id, attemptId);
+  }
   @Get(':id/stats')
   getStats(@Param('id', ParseIntPipe) id: number) {
     return this.quizzesService.getStats(id);

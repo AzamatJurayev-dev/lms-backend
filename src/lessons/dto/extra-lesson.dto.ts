@@ -6,6 +6,14 @@ export class ExtraLessonDto {
   @IsInt()
   subjectId: number;
 
+  @Type(() => Number)
+  @IsInt()
+  teacherId: number;
+
+  @Type(() => Number)
+  @IsInt()
+  roomId: number;
+
   @IsDateString()
   date: string;
 

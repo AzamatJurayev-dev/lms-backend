@@ -23,14 +23,15 @@ model Question {
   createdById Int
   createdBy   User @relation(fields: [createdById], references: [id])
 
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  quizItems      QuizItem[]
-  tests          Test[]
-  attemptAnswers AttemptAnswer[]
-  exam           Exam?           @relation(fields: [examId], references: [id])
-  examId         Int?
-  examAnswers    ExamAnswer[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  quizItems          QuizItem[]
+  tests              Test[]
+  testAttemptAnswers TestAttemptAnswer[]
+  quizAttemptAnswers QuizAttemptAnswer[]
+  exam               Exam?               @relation(fields: [examId], references: [id])
+  examId             Int?
+  examAnswers        ExamAnswer[]
 
   @@index([subjectId, difficulty])
 }
@@ -40,7 +41,8 @@ model Option {
   text      String
   isCorrect Boolean
 
-  questionId     Int
-  question       Question        @relation(fields: [questionId], references: [id])
-  attemptAnswers AttemptAnswer[]
+  questionId         Int
+  question           Question            @relation(fields: [questionId], references: [id])
+  testAttemptAnswers TestAttemptAnswer[]
+  quizAttemptAnswers QuizAttemptAnswer[]
 }

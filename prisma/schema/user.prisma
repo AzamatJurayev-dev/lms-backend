@@ -22,18 +22,21 @@ model User {
   companyId Int?
   company   Company? @relation(fields: [companyId], references: [id])
 
-  student          Student?
-  teacher          Teacher?
-  notifications    Notification[]
-  questions        Question[]
-  quizzes          Quiz[]
-  tests            Test[]
-  chatRooms        ChatRoom[]        @relation("ChatRoomCreatedBy")
-  chatParticipants ChatParticipant[]
-  chatMessages     ChatMessage[]     @relation("ChatMessageSender")
-  files            File[]
-  quizLeaderboards QuizLeaderboard[]
-  attempts         Attempt[]
+  student            Student?
+  teacher            Teacher?
+  notifications      Notification[]
+  questions          Question[]
+  quizzes            Quiz[]
+  tests              Test[]
+  chatRooms          ChatRoom[]          @relation("ChatRoomCreatedBy")
+  chatParticipants   ChatParticipant[]
+  chatMessages       ChatMessage[]       @relation("ChatMessageSender")
+  files              File[]
+  quizLeaderboards   QuizLeaderboard[]
+  testAttemptAnswers TestAttemptAnswer[]
+  quizAttemptAnswers QuizAttemptAnswer[]
+  testAttempts       TestAttempt[]
+  quizAttempts       QuizAttempt[]
 }
 
 model Teacher {

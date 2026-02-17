@@ -12,12 +12,11 @@ model Quiz {
   groupId  Int
   group    Group      @relation(fields: [groupId], references: [id])
   duration Int
-  status   QuizStatus
-  count    Int
+  status   QuizStatus @default(CREATED)
 
   items            QuizItem[]
   quizLeaderboards QuizLeaderboard[]
-  attempts         Attempt[]
+  attempts         QuizAttempt[]
 
   createdById Int
   createdBy   User @relation(fields: [createdById], references: [id])
@@ -26,6 +25,9 @@ model Quiz {
   updatedAt  DateTime  @updatedAt
   startedAt  DateTime?
   finishedAt DateTime?
+
+  @@index([status])
+  @@index([groupId])
 }
 
 model QuizItem {
