@@ -26,6 +26,7 @@ export class AuthController {
 
     return {
       success: true,
+      accessToken,
       user,
     };
   }

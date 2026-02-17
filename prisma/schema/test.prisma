@@ -6,13 +6,37 @@ enum TestStatus {
 }
 
 model Test {
-  id          Int           @id @default(autoincrement())
-  title       String
-  duration    Int
-  status      TestStatus    @default(DRAFT)
-  questions   Question[]
-  createdById Int
-  createdBy   User          @relation(fields: [createdById], references: [id])
-  createdAt   DateTime      @default(now())
-  attempts    TestAttempt[]
+  id           Int           @id @default(autoincrement())
+  title        String
+  duration     Int
+  status       TestStatus    @default(DRAFT)
+  questions    Question[]
+  createdById  Int
+  createdBy    User          @relation(fields: [createdById], references: [id])
+  createdAt    DateTime      @default(now())
+  attempts     TestAttempt[]
+  testPlanners TestPlanner[]
+}
+
+model TestPlanner {
+  id Int @id @default(autoincrement())
+
+  testId Int
+  test   Test @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  groupId Int
+  group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  date      DateTime
+  startTime DateTime
+  endTime   DateTime
+
+  isActive Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@unique([testId, groupId, date])
+  @@index([groupId])
+  @@index([testId])
+  @@index([date])
 }

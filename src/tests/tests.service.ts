@@ -38,7 +38,7 @@ export class TestsService {
         },
       },
       {
-        allowedOrderFields: ['name', 'code', 'createdAt', 'isActive'],
+        allowedOrderFields: ['title', 'duration', 'createdAt'],
         allowedFilterFields: ['isActive'],
         searchableFields: ['name', 'code', 'email', 'phone'],
         defaultOrderBy: { createdAt: 'desc' },
@@ -67,6 +67,13 @@ export class TestsService {
     try {
       return await this.prisma.test.findUniqueOrThrow({
         where: { id },
+        include: {
+          questions: {
+            include: {
+              options: true,
+            },
+          },
+        },
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {

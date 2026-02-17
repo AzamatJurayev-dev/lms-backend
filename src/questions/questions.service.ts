@@ -27,7 +27,7 @@ export class QuestionsService {
       data: {
         text: dto.text,
         difficulty: dto.difficulty,
-        source: dto.source,
+        source: 'MANUAL',
         subjectId: dto.subjectId,
         createdById: user.id,
         options: {

@@ -20,7 +20,9 @@ export class ChatService {
           include: {
             participants: {
               include: {
-                user: true,
+                user: {
+                  select: { id: true, firstName: true, lastName: true },
+                },
               },
             },
             messages: {
@@ -53,20 +55,29 @@ export class ChatService {
       throw new BadRequestException('Group name is required');
     }
 
-    /* ---- PRIVATE duplicate check ---- */
-    if (dto.type === 'PRIVATE' && dto.memberIds?.length === 1) {
+    /* ===============================
+       PRIVATE VALIDATION
+    =============================== */
+    if (dto.type === 'PRIVATE') {
+      if (!dto.memberIds || dto.memberIds.length !== 1) {
+        throw new BadRequestException(
+          'PRIVATE chat must have exactly 1 target user',
+        );
+      }
+
       const targetUserId = dto.memberIds[0];
+
+      if (targetUserId === userId) {
+        throw new BadRequestException('You cannot chat with yourself');
+      }
 
       const existing = await this.prisma.chatRoom.findFirst({
         where: {
           type: 'PRIVATE',
-          participants: {
-            every: {
-              userId: {
-                in: [userId, targetUserId],
-              },
-            },
-          },
+          AND: [
+            { participants: { some: { userId } } },
+            { participants: { some: { userId: targetUserId } } },
+          ],
         },
         include: { participants: true },
       });
@@ -76,14 +87,12 @@ export class ChatService {
       }
     }
 
-    const memberIds = Array.from(
-      new Set([userId, ...(dto.memberIds ?? [])]),
-    );
+    const memberIds = Array.from(new Set([userId, ...(dto.memberIds ?? [])]));
 
-    const room = await this.prisma.chatRoom.create({
+    return this.prisma.chatRoom.create({
       data: {
         type: dto.type,
-        name: dto.name,
+        name: dto.type === 'GROUP' ? dto.name : null,
         createdById: userId,
         participants: {
           create: memberIds.map((id) => ({
@@ -92,8 +101,6 @@ export class ChatService {
         },
       },
     });
-
-    return room;
   }
 
   /* ===============================
@@ -139,11 +146,7 @@ export class ChatService {
   /* ===============================
      CREATE MESSAGE
   =============================== */
-  async createMessage(
-    userId: number,
-    roomId: number,
-    text: string,
-  ) {
+  async createMessage(userId: number, roomId: number, text: string) {
     const participant = await this.prisma.chatParticipant.findFirst({
       where: { roomId, userId },
     });

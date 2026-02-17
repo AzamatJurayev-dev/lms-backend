@@ -4,8 +4,6 @@ import {
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
@@ -13,105 +11,42 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: ['https://lms-nine-mu.vercel.app', 'http://localhost:5173'],
+    credentials: true,
   },
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
+
   @WebSocketServer()
   server: Server;
 
-  constructor(
-    private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService,
-  ) {}
+  /* ================= CONNECTION ================= */
+  handleConnection(client: Socket) {
+    const token = client.handshake.auth.token;
 
-  async handleConnection(client: Socket) {
+    if (!token) {
+      client.disconnect();
+      return;
+    }
+
     try {
-      const token =
-        client.handshake.auth?.token ||
-        client.handshake.headers.authorization?.replace('Bearer ', '');
-
-      if (!token) {
-        client.disconnect();
-        return;
-      }
-
-      const payload = await this.jwtService.verifyAsync(token);
-
-      client.data.user = {
-        id: payload.sub,
-        role: payload.role,
-        companyId: payload.companyId,
-      };
+      const user = this.jwtService.verify(token);
+      client.data.user = user;
+      console.log('USER CONNECTED:', user.sub);
     } catch {
       client.disconnect();
     }
   }
 
-  handleDisconnect(client: Socket) {
-    // Hozircha maxsus logika yo'q
-  }
-
   @SubscribeMessage('joinRoom')
-  async handleJoinRoom(
+  async handleJoin(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: number },
   ) {
-    const user = client.data.user;
-    if (!user) {
-      client.disconnect();
-      return;
-    }
-
-    const participant = await this.prisma.chatParticipant.findFirst({
-      where: {
-        roomId: data.roomId,
-        userId: user.id,
-      },
-    });
-
-    if (!participant) {
-      return;
-    }
-
-    client.join(`room:${data.roomId}`);
-  }
-
-  @SubscribeMessage('sendMessage')
-  async handleSendMessage(
-    @ConnectedSocket() client: Socket,
-    @MessageBody()
-    data: {
-      roomId: number;
-      text: string;
-    },
-  ) {
-    const user = client.data.user;
-    if (!user) {
-      client.disconnect();
-      return;
-    }
-
-    const participant = await this.prisma.chatParticipant.findFirst({
-      where: {
-        roomId: data.roomId,
-        userId: user.id,
-      },
-    });
-
-    if (!participant) {
-      return;
-    }
-
-    const message = await this.prisma.chatMessage.create({
-      data: {
-        roomId: data.roomId,
-        senderId: user.id,
-        text: data.text,
-      },
-    });
-
-    this.server.to(`room:${data.roomId}`).emit('message', message);
+    await client.join(`room:${data.roomId}`);
   }
 }
-

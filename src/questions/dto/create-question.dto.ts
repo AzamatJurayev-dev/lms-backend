@@ -11,7 +11,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Difficulty, QuestionSource } from '@prisma/client';
+import { Difficulty } from '@prisma/client';
 
 export class CreateOptionDto {
   @ApiProperty({
@@ -46,14 +46,6 @@ export class CreateQuestionDto {
   })
   @IsEnum(Difficulty)
   difficulty: Difficulty;
-
-  @ApiProperty({
-    enum: QuestionSource,
-    example: QuestionSource.MANUAL,
-    description: 'Source of the question',
-  })
-  @IsEnum(QuestionSource)
-  source: QuestionSource;
 
   @ApiProperty({
     example: 1,

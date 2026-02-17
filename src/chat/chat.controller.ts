@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseIntPipe,
   Post,
   Query,
   Req,
@@ -34,5 +35,13 @@ export class ChatController {
     @Query() query,
   ) {
     return this.chatService.getRoomMessages(Number(id), user.id, query);
+  }
+  @Post('rooms/:id/messages')
+  createMessage(
+    @Param('id', ParseIntPipe) roomId: number,
+    @Body() dto: { text: string },
+    @CurrentUser() user: any,
+  ) {
+    return this.chatService.createMessage(user.id, roomId, dto.text);
   }
 }

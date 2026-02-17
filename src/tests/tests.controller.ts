@@ -18,6 +18,7 @@ import { UpdateTestDto } from './dto/update-test.dto';
 import { CurrentUser } from '../auth/current-user';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TestAttemptsService } from './test-attempts.service';
+import type { CurrentUserType } from '../common/types/current-user.type';
 
 @UseGuards(JwtAuthGuard)
 @Controller('tests')
@@ -73,8 +74,11 @@ export class TestsController {
   }
 
   @Post(':id/attempts/start')
-  startTest(@Param('id', ParseIntPipe) testId: number, @Req() req) {
-    return this.testAttemptsService.start(req.user.id, testId);
+  startTest(
+    @Param('id', ParseIntPipe) testId: number,
+    @CurrentUser() user: CurrentUserType,
+  ) {
+    return this.testAttemptsService.start(user.id, testId);
   }
 
   @Patch('attempts/:attemptId/answer')

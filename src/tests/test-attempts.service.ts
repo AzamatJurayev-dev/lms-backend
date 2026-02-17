@@ -19,9 +19,9 @@ export class TestAttemptsService {
 
     if (!test) throw new NotFoundException('Test not found');
 
-    if (test.status !== 'PUBLISHED') {
-      throw new BadRequestException('Test not published');
-    }
+    // if (test.status !== 'PUBLISHED') {
+    //   throw new BadRequestException('Test not published');
+    // }
 
     return this.prisma.testAttempt.create({
       data: {
