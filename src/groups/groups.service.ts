@@ -15,6 +15,8 @@ import { GroupsLessonsService } from './groups-lessons.service';
 import { formatTime } from '../common/utils/date-time.util';
 import { mappedUsers } from '../common/helpers/user-map';
 import { UserSelect } from '../users/utils/users.select';
+import { buildQuery } from '../common/query/query.helper';
+import type { CurrentUserType } from '../common/types/current-user.type';
 
 @Injectable()
 export class GroupsService {
@@ -42,19 +44,45 @@ export class GroupsService {
     });
   }
 
-  async findAll(page: number, page_size: number) {
-    const skip = (page - 1) * page_size;
+  async findAll(query: any, user: CurrentUserType) {
+    const q = buildQuery(
+      {
+        page: query.page,
+        pageSize: query.pageSize,
+        ordering: query.ordering,
+        search: query.search,
+        date_from: query.date_from,
+        date_to: query.date_to,
+        filters: {
+          isActive: query.isActive,
+        },
+      },
+      {
+        allowedOrderFields: ['firstName', 'lastName', 'middleName', 'isActive'],
+        allowedFilterFields: ['isActive'],
+        searchableFields: ['name'],
+        defaultOrderBy: { createdAt: 'desc' },
+        dateField: 'createdAt',
+      },
+    );
 
-    const [groups, total] = await Promise.all([
+    const where: any = {
+      ...q.where,
+    };
+
+    const [items, total] = await this.prisma.$transaction([
       this.prisma.group.findMany({
-        skip,
-        take: page_size,
-        select: GroupSelect,
+        skip: q.skip,
+        take: q.take,
+        where,
+        orderBy: q.orderBy,
       }),
-      this.prisma.user.count(),
+      this.prisma.group.count({
+        where,
+      }),
     ]);
 
-    return paginate(groups, total, page, page_size);
+    return paginate(items, total, q.page, q.pageSize);
   }
 
   async findOne(id: number) {

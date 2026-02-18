@@ -1,17 +1,9 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseIntPipe,
-  Post,
-  Query,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query, Req, UseGuards, } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CurrentUser } from '../auth/current-user';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import type { CurrentUserType } from '../common/types/current-user.type';
+import { CreateMessageDto } from './dto/create-chat-message.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('chat')
@@ -28,6 +20,11 @@ export class ChatController {
     return this.chatService.createRoom(req.user.id, dto);
   }
 
+  @Delete('rooms/:id')
+  deleteRoom(@Param('id', ParseIntPipe) id: number) {
+    return this.chatService.deleteRoom(id);
+  }
+
   @Get('rooms/:id/messages')
   getRoomMessages(
     @CurrentUser() user,
@@ -36,12 +33,15 @@ export class ChatController {
   ) {
     return this.chatService.getRoomMessages(Number(id), user.id, query);
   }
-  @Post('rooms/:id/messages')
+  @Post('messages')
   createMessage(
-    @Param('id', ParseIntPipe) roomId: number,
-    @Body() dto: { text: string },
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserType,
+    @Body() dto: CreateMessageDto,
   ) {
-    return this.chatService.createMessage(user.id, roomId, dto.text);
+    return this.chatService.createMessage(user.id, dto);
+  }
+  @Delete('messages/:id')
+  deleteMessage(@Param('id', ParseIntPipe) id: number) {
+    return this.chatService.deleteMessage(id);
   }
 }

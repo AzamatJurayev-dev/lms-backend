@@ -13,8 +13,9 @@ import {
 import { GroupsService } from './groups.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
-import { ParamsDTO } from '../common/query/query-dto';
 import { AddStudentsDto } from './dto/add-students.dto';
+import { CurrentUser } from '../auth/current-user';
+import type { CurrentUserType } from '../common/types/current-user.type';
 
 @Controller('groups')
 export class GroupsController {
@@ -26,8 +27,8 @@ export class GroupsController {
   }
 
   @Get()
-  findAll(@Query() query: ParamsDTO) {
-    return this.groupsService.findAll(query.page ?? 1, query.page_size ?? 10);
+  findAll(@Query() query: any, @CurrentUser() user: CurrentUserType) {
+    return this.groupsService.findAll(query, user);
   }
 
   @Get(':id')

@@ -11,7 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @WebSocketGateway({
   cors: {
-    origin: ['https://lms-nine-mu.vercel.app', 'http://localhost:5173'],
+    origin: ['https://lms-nine-mu.vercel.app', 'http://localhost:3000'],
     credentials: true,
   },
 })

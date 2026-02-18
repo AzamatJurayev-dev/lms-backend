@@ -1,17 +1,11 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-} from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateMessageDto } from './dto/create-chat-message.dto';
 
 @Injectable()
 export class ChatService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /* ===============================
-     GET MY ROOMS
-  =============================== */
   async getMyRooms(userId: number) {
     const participants = await this.prisma.chatParticipant.findMany({
       where: { userId },
@@ -40,24 +34,70 @@ export class ChatService {
     return participants.map((p) => p.room);
   }
 
-  /* ===============================
-     CREATE ROOM
-  =============================== */
+  // async create(dto: CreateChatRoomDto, currentUserId: number) {
+  //   if (dto.type === RoomType.PRIVATE) {
+  //     const memberIds = Array.from(
+  //       new Set([currentUserId, ...(dto.memberIds ?? [])]),
+  //     );
+  //
+  //     return this.prisma.chatRoom.create({
+  //       data: {
+  //         type: 'PRIVATE',
+  //         createdById: currentUserId,
+  //         participants: {
+  //           create: [
+  //             { userId: currentUserId },
+  //             ...memberIds.map((id) => ({
+  //               userId: id,
+  //             })),
+  //           ],
+  //         },
+  //       },
+  //     });
+  //   }
+  //
+  //   if (dto.type === RoomType.GROUP) {
+  //     const group = await this.prisma.group.findUnique({
+  //       where: { id: dto.groupId },
+  //       include: {
+  //         students: true,
+  //         teachers: true,
+  //       },
+  //     });
+  //
+  //     if (!group) {
+  //       throw new NotFoundException('Group not found');
+  //     }
+  //
+  //     const userIds = [
+  //       ...group.teachers.map((teacher) => teacher.id),
+  //       ...group.students.map((s) => s.id),
+  //     ];
+  //
+  //     return this.prisma.chatRoom.create({
+  //       data: {
+  //         type: 'GROUP',
+  //         groupId: group.id,
+  //         name: group.name,
+  //         createdById: currentUserId,
+  //         participants: {
+  //           create: userIds.map((id) => ({
+  //             userId: id,
+  //           })),
+  //         },
+  //       },
+  //     });
+  //   }
+  // }
+
   async createRoom(
     userId: number,
     dto: {
       type: 'PRIVATE' | 'GROUP';
-      name?: string;
       memberIds?: number[];
+      groupId?: number;
     },
   ) {
-    if (dto.type === 'GROUP' && !dto.name) {
-      throw new BadRequestException('Group name is required');
-    }
-
-    /* ===============================
-       PRIVATE VALIDATION
-    =============================== */
     if (dto.type === 'PRIVATE') {
       if (!dto.memberIds || dto.memberIds.length !== 1) {
         throw new BadRequestException(
@@ -85,27 +125,79 @@ export class ChatService {
       if (existing && existing.participants.length === 2) {
         return existing;
       }
+
+      const memberIds = [userId, targetUserId];
+
+      return this.prisma.chatRoom.create({
+        data: {
+          type: 'PRIVATE',
+          createdById: userId,
+          participants: {
+            create: memberIds.map((id) => ({
+              userId: id,
+            })),
+          },
+        },
+      });
     }
 
-    const memberIds = Array.from(new Set([userId, ...(dto.memberIds ?? [])]));
+    if (dto.type === 'GROUP') {
+      if (!dto.groupId) {
+        throw new BadRequestException('groupId is required');
+      }
 
-    return this.prisma.chatRoom.create({
-      data: {
-        type: dto.type,
-        name: dto.type === 'GROUP' ? dto.name : null,
-        createdById: userId,
-        participants: {
-          create: memberIds.map((id) => ({
-            userId: id,
-          })),
+      const group = await this.prisma.group.findUniqueOrThrow({
+        where: { id: dto.groupId },
+        include: {
+          students: true,
+          teachers: true,
         },
-      },
-    });
+      });
+
+      const existingGroupRoom = await this.prisma.chatRoom.findFirst({
+        where: {
+          type: 'GROUP',
+          groupId: group.id,
+        },
+      });
+
+      if (existingGroupRoom) {
+        return existingGroupRoom;
+      }
+
+      const userIds = [
+        ...group.teachers.map((s) => s.id),
+        ...group.students.map((s) => s.id),
+      ];
+
+      return this.prisma.chatRoom.create({
+        data: {
+          type: 'GROUP',
+          groupId: group.id,
+          name: group.name,
+          createdById: userId,
+          participants: {
+            create: userIds.map((id) => ({
+              userId: id,
+            })),
+          },
+        },
+      });
+    }
+
+    throw new BadRequestException('Invalid room type');
   }
 
-  /* ===============================
-     GET ROOM MESSAGES
-  =============================== */
+  async deleteRoom(roomId: number) {
+    try {
+      await this.prisma.chatRoom.delete({
+        where: { id: roomId },
+      });
+    } catch {
+      throw new BadRequestException();
+    }
+  }
+
   async getRoomMessages(
     roomId: number,
     userId: number,
@@ -128,6 +220,9 @@ export class ChatService {
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy: { createdAt: 'desc' },
+        include: {
+          sender: true,
+        },
       }),
       this.prisma.chatMessage.count({ where: { roomId } }),
     ]);
@@ -143,15 +238,16 @@ export class ChatService {
     };
   }
 
-  /* ===============================
-     CREATE MESSAGE
-  =============================== */
-  async createMessage(userId: number, roomId: number, text: string) {
+  async createMessage(userId: number, dto: CreateMessageDto) {
+    const { roomId, text } = dto;
+
     const participant = await this.prisma.chatParticipant.findFirst({
       where: { roomId, userId },
     });
 
-    if (!participant) throw new ForbiddenException();
+    if (!participant) {
+      throw new ForbiddenException();
+    }
 
     const message = await this.prisma.chatMessage.create({
       data: {
@@ -167,5 +263,15 @@ export class ChatService {
     });
 
     return message;
+  }
+
+  async deleteMessage(id: number) {
+    try {
+      return this.prisma.chatMessage.delete({
+        where: { id },
+      });
+    } catch {
+      throw new ForbiddenException();
+    }
   }
 }
