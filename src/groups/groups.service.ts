@@ -146,29 +146,75 @@ export class GroupsService {
     });
   }
 
-  async getStudents(groupId: number) {
-    const group = await this.prisma.group.findUnique({
-      where: { id: groupId },
-      select: {
-        students: {
-          select: {
-            id: true,
-            bio: true,
-            hobby: true,
-            parents: true,
-            groups: true,
-            user: {
-              select: UserSelect,
-            },
-          },
+  async getStudents(groupId: number, query: any) {
+    const q = buildQuery(
+      {
+        page: query.page,
+        pageSize: query.pageSize,
+        ordering: query.ordering,
+        search: query.search,
+        date_from: query.date_from,
+        date_to: query.date_to,
+        filters: {
+          isActive: query.isActive,
         },
       },
+      {
+        allowedOrderFields: ['firstName', 'lastName', 'middleName', 'isActive'],
+        allowedFilterFields: ['isActive'],
+        searchableFields: ['firstName', 'lastName', 'middleName'],
+        defaultOrderBy: { createdAt: 'desc' },
+        dateField: 'createdAt',
+      },
+    );
+
+    // 1️⃣ Group mavjudligini tekshiramiz
+    const groupExists = await this.prisma.group.findUnique({
+      where: { id: groupId },
+      select: { id: true },
     });
 
-    if (!group) {
-      throw new Error('Group not found');
+    if (!groupExists) {
+      throw new NotFoundException('Group not found');
     }
-    return mappedUsers(group.students);
+
+    const [students, total] = await this.prisma.$transaction([
+      this.prisma.student.findMany({
+        where: {
+          groups: {
+            some: { id: groupId },
+          },
+          user: q.where,
+        },
+        skip: q.skip,
+        take: q.take,
+        orderBy: {
+          user: q.orderBy,
+        },
+        select: {
+          id: true,
+          bio: true,
+          hobby: true,
+          parents: true,
+          groups: true,
+          user: {
+            select: UserSelect,
+          },
+        },
+      }),
+      this.prisma.student.count({
+        where: {
+          groups: {
+            some: { id: groupId },
+          },
+          user: q.where,
+        },
+      }),
+    ]);
+
+    const mapped = mappedUsers(students);
+
+    return paginate(mapped, total, q.page, q.pageSize);
   }
 
   async removeStudents(groupId: number, studentIds: number[]) {

@@ -55,8 +55,8 @@ export class GroupsController {
   }
 
   @Get(':id/students')
-  getStudents(@Param('id', ParseIntPipe) groupId: number) {
-    return this.groupsService.getStudents(groupId);
+  getStudents(@Param('id', ParseIntPipe) groupId: number, @Query() query: any) {
+    return this.groupsService.getStudents(groupId, query);
   }
 
   @Delete(':id/students')
