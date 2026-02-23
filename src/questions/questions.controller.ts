@@ -4,8 +4,8 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import { QuestionsService } from './questions.service';
@@ -34,7 +34,7 @@ export class QuestionsController {
     return this.questionsService.findOne(+id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   update(
     @Param('id') id: string,
     @Body() updateQuestionDto: UpdateQuestionDto,

@@ -6,89 +6,21 @@ import { CreateMessageDto } from './dto/create-chat-message.dto';
 export class ChatService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getMyRooms(userId: number) {
-    const participants = await this.prisma.chatParticipant.findMany({
-      where: { userId },
+  async getMyRooms() {
+    return this.prisma.chatRoom.findMany({
       include: {
-        room: {
+        participants: {
           include: {
-            participants: {
-              include: {
-                user: {
-                  select: { id: true, firstName: true, lastName: true },
-                },
-              },
-            },
-            messages: {
-              orderBy: { createdAt: 'desc' },
-              take: 1,
-            },
+            user: true,
           },
         },
-      },
-      orderBy: {
-        room: { updatedAt: 'desc' },
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
       },
     });
-
-    return participants.map((p) => p.room);
   }
-
-  // async create(dto: CreateChatRoomDto, currentUserId: number) {
-  //   if (dto.type === RoomType.PRIVATE) {
-  //     const memberIds = Array.from(
-  //       new Set([currentUserId, ...(dto.memberIds ?? [])]),
-  //     );
-  //
-  //     return this.prisma.chatRoom.create({
-  //       data: {
-  //         type: 'PRIVATE',
-  //         createdById: currentUserId,
-  //         participants: {
-  //           create: [
-  //             { userId: currentUserId },
-  //             ...memberIds.map((id) => ({
-  //               userId: id,
-  //             })),
-  //           ],
-  //         },
-  //       },
-  //     });
-  //   }
-  //
-  //   if (dto.type === RoomType.GROUP) {
-  //     const group = await this.prisma.group.findUnique({
-  //       where: { id: dto.groupId },
-  //       include: {
-  //         students: true,
-  //         teachers: true,
-  //       },
-  //     });
-  //
-  //     if (!group) {
-  //       throw new NotFoundException('Group not found');
-  //     }
-  //
-  //     const userIds = [
-  //       ...group.teachers.map((teacher) => teacher.id),
-  //       ...group.students.map((s) => s.id),
-  //     ];
-  //
-  //     return this.prisma.chatRoom.create({
-  //       data: {
-  //         type: 'GROUP',
-  //         groupId: group.id,
-  //         name: group.name,
-  //         createdById: currentUserId,
-  //         participants: {
-  //           create: userIds.map((id) => ({
-  //             userId: id,
-  //           })),
-  //         },
-  //       },
-  //     });
-  //   }
-  // }
 
   async createRoom(
     userId: number,

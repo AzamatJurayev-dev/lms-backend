@@ -1,44 +1,36 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseIntPipe,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
-import { CertificatesService } from './certificates.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { CurrentUser } from '../auth/current-user';
+import { Body, Controller, Get, Param, Post, Query, Res } from '@nestjs/common';
+import { CreateCertificateDto } from './dto/create-certificate.dto';
+import type { Response } from 'express';
+import { CertificateService } from './certificates.service';
 
 @Controller('certificates')
-@UseGuards(JwtAuthGuard)
-export class CertificatesController {
-  constructor(private readonly service: CertificatesService) {}
+export class CertificateController {
+  constructor(private service: CertificateService) {}
 
   @Post()
-  issue(
-    @Body()
-    dto: {
-      studentId: number;
-      groupId: number;
-      templateId: number;
-    },
-    @CurrentUser() user: any,
-  ) {
-    return this.service.issueCertificate({
-      ...dto,
-      companyId: user.companyId ?? null,
-    });
+  async create(@Body() dto: CreateCertificateDto) {
+    return this.service.create(dto);
   }
 
   @Get()
-  findAll(@CurrentUser() user: any) {
-    return this.service.findAll(user.companyId);
+  async findAll(@Query() query: any) {
+    return this.service.findAll(query);
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.service.findOne(id);
+  @Get(':id/pdf')
+  async download(@Param('id') id: number, @Res() res: Response) {
+    const pdf = await this.service.generatePdf(+id);
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename=certificate.pdf`,
+    });
+
+    res.send(pdf);
+  }
+
+  @Get('verify/:certificateNo')
+  async verify(@Param('certificateNo') certificateNo: string) {
+    return this.service.verify(certificateNo);
   }
 }

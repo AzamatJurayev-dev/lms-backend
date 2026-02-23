@@ -85,6 +85,7 @@ export class QuestionsService {
         where: { id },
         include: {
           options: true,
+          subject: true,
         },
       });
     } catch (e) {
@@ -92,8 +93,26 @@ export class QuestionsService {
     }
   }
 
-  update(id: number, updateQuestionDto: UpdateQuestionDto) {
-    return `This action updates a #${id} question`;
+  async update(id: number, dto: UpdateQuestionDto) {
+    try {
+      const { options, subjectId, ...rest } = dto;
+
+      await this.prisma.question.update({
+        where: { id },
+        data: {
+          ...rest,
+          subject: {
+            connect: { id: subjectId },
+          },
+          options: {
+            deleteMany: {},
+            create: options,
+          },
+        },
+      });
+    } catch {
+      throw new BadRequestException('Update question failed');
+    }
   }
 
   remove(id: number) {

@@ -5,7 +5,6 @@ import {
   Get,
   Param,
   ParseIntPipe,
-  Patch,
   Post,
   Put,
   Query,
@@ -36,7 +35,7 @@ export class GroupsController {
     return this.groupsService.findOne(id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateGroupDto) {
     return this.groupsService.update(id, dto);
   }

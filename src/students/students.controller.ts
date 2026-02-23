@@ -1,8 +1,10 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
   ParseIntPipe,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -10,6 +12,7 @@ import { StudentsService } from './students.service';
 import type { CurrentUserType } from '../common/types/current-user.type';
 import { CurrentUser } from '../auth/current-user';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { UpdateStudentDto } from './dto/update-student.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('students')
@@ -24,6 +27,13 @@ export class StudentsController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.studentsService.findOne(id);
+  }
+  @Put('id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: UpdateStudentDto,
+  ) {
+    return this.studentsService.update(id, data);
   }
   @Get(':id/parents')
   getParent(@Param('id', ParseIntPipe) id: number) {

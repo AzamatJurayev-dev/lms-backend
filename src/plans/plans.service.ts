@@ -6,6 +6,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
+import { buildQuery } from '../common/query/query.helper';
+import { paginate } from '../common/pagination/pagination.helper';
 
 @Injectable()
 export class PlansService {
@@ -25,10 +27,39 @@ export class PlansService {
     });
   }
 
-  async findAll() {
-    return this.prisma.plan.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+  async findAll(query: any) {
+    const q = buildQuery(
+      {
+        page: query.page,
+        pageSize: query.pageSize,
+        ordering: query.ordering,
+        search: query.search,
+        date_from: query.date_from,
+        date_to: query.date_to,
+        filters: {
+          isActive: query.isActive,
+        },
+      },
+      {
+        allowedOrderFields: ['isActive', 'name'],
+        allowedFilterFields: ['isActive'],
+        searchableFields: ['name'],
+        defaultOrderBy: { createdAt: 'desc' },
+        dateField: 'createdAt',
+      },
+    );
+
+    const where: any = {
+      ...q.where,
+    };
+    const [items, total] = await Promise.all([
+      this.prisma.plan.findMany({
+        where,
+      }),
+      this.prisma.plan.count(),
+    ]);
+
+    return paginate(items, total, q.page, q.pageSize);
   }
 
   async findOne(id: number) {

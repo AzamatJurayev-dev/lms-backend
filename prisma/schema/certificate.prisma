@@ -1,34 +1,36 @@
+enum CertificateTemplateType {
+  CLASSIC
+  MODERN
+}
+
 model CertificateTemplate {
-  id   Int    @id @default(autoincrement())
-  name String
-
-  html     String?
-  isActive Boolean @default(true)
-
-  companyId Int?
-  company   Company? @relation(fields: [companyId], references: [id])
+  id        Int                     @id @default(autoincrement())
+  name      String
+  type      CertificateTemplateType @unique
+  imageUrl  String
+  width     Int
+  height    Int
+  createdAt DateTime                @default(now())
 
   certificates Certificate[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  company      Company?      @relation(fields: [companyId], references: [id])
+  companyId    Int?
 }
 
 model Certificate {
-  id Int @id @default(autoincrement())
+  id            Int                 @id @default(autoincrement())
+  fullName      String
+  courseName    String
+  certificateNo String              @unique
+  issuedAt      DateTime            @default(now())
+  templateId    Int
+  template      CertificateTemplate @relation(fields: [templateId], references: [id])
 
-  studentId Int
-  student   Student @relation(fields: [studentId], references: [id])
-
-  groupId Int
-  group   Group @relation(fields: [groupId], references: [id])
-
-  templateId Int
-  template   CertificateTemplate @relation(fields: [templateId], references: [id])
-
-  companyId Int?
+  createdAt DateTime @default(now())
   company   Company? @relation(fields: [companyId], references: [id])
-
-  issuedAt DateTime @default(now())
-  fileUrl  String?
+  companyId Int?
+  group     Group?   @relation(fields: [groupId], references: [id])
+  groupId   Int?
+  student   Student? @relation(fields: [studentId], references: [id])
+  studentId Int?
 }

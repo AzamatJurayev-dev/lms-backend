@@ -6,6 +6,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -29,8 +30,8 @@ export class PlansController {
 
   @Get()
   @ApiOperation({ summary: 'Get all plans' })
-  findAll() {
-    return this.plansService.findAll();
+  findAll(@Query() query: any) {
+    return this.plansService.findAll(query);
   }
 
   @Get(':id')

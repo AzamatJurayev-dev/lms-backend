@@ -22,8 +22,8 @@ export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
   @Get('rooms')
-  getMyRooms(@Req() req) {
-    return this.chatService.getMyRooms(req.user.id);
+  getMyRooms() {
+    return this.chatService.getMyRooms();
   }
 
   @Post('rooms')

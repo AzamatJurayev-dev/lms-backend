@@ -100,8 +100,15 @@ export class GroupsService {
     };
   }
 
-  update(id: number, updateGroupDto: UpdateGroupDto) {
-    return `This action updates a #${id} group`;
+  async update(id: number, updateGroupDto: UpdateGroupDto) {
+    try {
+      await this.prisma.group.update({
+        where: { id },
+        data: { ...updateGroupDto },
+      });
+    } catch {
+      throw new BadRequestException('Update group failed');
+    }
   }
 
   async remove(id: number) {
@@ -160,15 +167,14 @@ export class GroupsService {
         },
       },
       {
-        allowedOrderFields: ['firstName', 'lastName', 'middleName', 'isActive'],
+        allowedOrderFields: ['name', 'code'],
         allowedFilterFields: ['isActive'],
-        searchableFields: ['firstName', 'lastName', 'middleName'],
+        searchableFields: ['name', 'code'],
         defaultOrderBy: { createdAt: 'desc' },
         dateField: 'createdAt',
       },
     );
 
-    // 1️⃣ Group mavjudligini tekshiramiz
     const groupExists = await this.prisma.group.findUnique({
       where: { id: groupId },
       select: { id: true },

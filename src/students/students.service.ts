@@ -6,6 +6,7 @@ import { paginate } from '../common/pagination/pagination.helper';
 import { mappedUsers } from '../common/helpers/user-map';
 import { buildQuery } from '../common/query/query.helper';
 import type { CurrentUserType } from '../common/types/current-user.type';
+import { UpdateStudentDto } from './dto/update-student.dto';
 
 @Injectable()
 export class StudentsService {
@@ -82,6 +83,17 @@ export class StudentsService {
 
   findOne(id: number) {
     return `This action returns a #${id} student`;
+  }
+
+  async update(id: number, data: UpdateStudentDto) {
+    try {
+      await this.prisma.student.update({
+        where: { id },
+        data: { ...data },
+      });
+    } catch {
+      throw new NotFoundException();
+    }
   }
 
   async getParents(id: number) {

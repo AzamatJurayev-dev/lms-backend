@@ -1,51 +1,51 @@
 export type Lang = 'uz' | 'ru' | 'en';
 
 export const LANG_LABELS: Record<
-    Lang,
-    {
-        modules: Record<string, string>;
-        actions: Record<string, string>;
-    }
+  Lang,
+  {
+    modules: Record<string, string>;
+    actions: Record<string, string>;
+  }
 > = {
-    uz: {
-        modules: {
-            management: 'Boshqaruv',
-            users: 'Foydalanuvchilar',
-            roles: 'Rollar',
-        },
-        actions: {
-            read: 'Ko‘rish',
-            create: 'Yaratish',
-            update: 'Tahrirlash',
-            delete: 'O‘chirish',
-        },
+  uz: {
+    modules: {
+      management: 'Boshqaruv',
+      users: 'Foydalanuvchilar',
+      roles: 'Rollar',
     },
-    ru: {
-        modules: {
-            management: 'Управление',
-            users: 'Пользователи',
-            roles: 'Роли',
-        },
-        actions: {
-            read: 'Просмотр',
-            create: 'Создать',
-            update: 'Редактировать',
-            delete: 'Удалить',
-        },
+    actions: {
+      read: 'Ko‘rish',
+      create: 'Yaratish',
+      update: 'Tahrirlash',
+      delete: 'O‘chirish',
     },
-    en: {
-        modules: {
-            management: 'Management',
-            users: 'Users',
-            roles: 'Roles',
-        },
-        actions: {
-            read: 'View',
-            create: 'Create',
-            update: 'Edit',
-            delete: 'Delete',
-        },
+  },
+  ru: {
+    modules: {
+      management: 'Управление',
+      users: 'Пользователи',
+      roles: 'Роли',
     },
+    actions: {
+      read: 'Просмотр',
+      create: 'Создать',
+      update: 'Редактировать',
+      delete: 'Удалить',
+    },
+  },
+  en: {
+    modules: {
+      management: 'Management',
+      users: 'Users',
+      roles: 'Roles',
+    },
+    actions: {
+      read: 'View',
+      create: 'Create',
+      update: 'Edit',
+      delete: 'Delete',
+    },
+  },
 };
 
 // 👉 Faqat SHUNI yozasiz
