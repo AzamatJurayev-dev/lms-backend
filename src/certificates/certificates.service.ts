@@ -3,6 +3,7 @@ import { CreateCertificateDto } from './dto/create-certificate.dto';
 import * as puppeteer from 'puppeteer';
 import { PrismaService } from '../prisma/prisma.service';
 import { CertificateTemplateType } from '@prisma/client';
+import { paginate } from '../common/pagination/pagination.helper';
 
 @Injectable()
 export class CertificateService {
@@ -30,15 +31,7 @@ export class CertificateService {
       this.prisma.certificate.count(),
     ]);
 
-    return {
-      data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return paginate(data, total, page, limit);
   }
 
   async create(dto: CreateCertificateDto) {
@@ -62,134 +55,176 @@ export class CertificateService {
   }
 
   private generateHtml(certificate: any) {
-    const BASE_URL = process.env.APP_BASE_URL;
-
-    const backgroundUrl = `${BASE_URL}/templates/${
-      certificate.template.type === CertificateTemplateType.CLASSIC
-        ? 'template1.png'
-        : 'template2.png'
-    }`;
-
     if (certificate.template.type === CertificateTemplateType.CLASSIC) {
-      return this.generateClassicHtml(certificate, backgroundUrl);
+      return this.generateClassicHtml(certificate);
     }
 
-    return this.generateModernHtml(certificate, backgroundUrl);
+    return this.generateModernHtml(certificate);
   }
 
-  private generateClassicHtml(certificate: any, bg: string) {
+  private generateClassicHtml(certificate: any) {
     return `
-    <html lang="en">
-      <body style="
-        margin:0;
-        width:1200px;
-        height:850px;
-        background:url('${bg}') no-repeat center;
-        background-size:cover;
+  <html lang="en">
+    <body style="
+      margin:0;
+      width:1200px;
+      height:850px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      background:#f8f6f2;
+      font-family: 'Georgia', serif;
+    ">
+      <div style="
+        width:1100px;
+        height:750px;
+        border:8px solid #1e293b;
+        padding:60px;
+        box-sizing:border-box;
         position:relative;
-        font-family: Georgia, serif;
+        text-align:center;
+        background:white;
       ">
-
-        <div style="
-          position:absolute;
-          top:360px;
-          left:50%;
-          transform:translateX(-50%);
+        
+        <h1 style="
           font-size:48px;
+          margin-bottom:40px;
+          letter-spacing:2px;
+        ">
+          CERTIFICATE OF COMPLETION
+        </h1>
+
+        <p style="font-size:22px;">This certifies that</p>
+
+        <h2 style="
+          font-size:56px;
+          margin:30px 0;
           font-weight:bold;
+          border-bottom:2px solid #000;
+          display:inline-block;
+          padding:0 20px 10px;
         ">
           ${certificate.fullName}
-        </div>
+        </h2>
 
-        <div style="
-          position:absolute;
-          top:430px;
-          left:50%;
-          transform:translateX(-50%);
-          font-size:24px;
+        <p style="font-size:22px; margin-top:30px;">
+          has successfully completed the course
+        </p>
+
+        <h3 style="
+          font-size:30px;
+          margin-top:20px;
+          font-weight:600;
         ">
           ${certificate.courseName}
-        </div>
+        </h3>
 
         <div style="
           position:absolute;
-          bottom:100px;
-          left:120px;
-          font-size:16px;
+          bottom:60px;
+          left:80px;
+          font-size:18px;
         ">
           ${new Date(certificate.issuedAt).toLocaleDateString()}
         </div>
 
         <div style="
           position:absolute;
-          bottom:100px;
-          right:120px;
-          font-size:14px;
+          bottom:60px;
+          right:80px;
+          font-size:16px;
         ">
           ${certificate.certificateNo}
         </div>
 
-      </body>
-    </html>
-    `;
+      </div>
+    </body>
+  </html>
+  `;
   }
 
-  private generateModernHtml(certificate: any, bg: string) {
+  private generateModernHtml(certificate: any) {
     return `
-    <html lang="en">
-      <body style="
-        margin:0;
-        width:1200px;
-        height:850px;
-        background:url('${bg}') no-repeat center;
-        background-size:cover;
+  <html lang="en">
+    <body style="
+      margin:0;
+      width:1200px;
+      height:850px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      background:linear-gradient(135deg,#0f172a,#1e3a8a);
+      font-family: Arial, sans-serif;
+    ">
+      <div style="
+        width:1050px;
+        height:700px;
+        background:white;
+        border-radius:20px;
+        padding:80px;
+        box-sizing:border-box;
+        text-align:center;
         position:relative;
-        font-family: Arial, sans-serif;
-        color:white;
       ">
 
-        <div style="
-          position:absolute;
-          top:320px;
-          left:50%;
-          transform:translateX(-50%);
-          font-size:52px;
-          font-weight:bold;
+        <h1 style="
+          font-size:42px;
+          margin-bottom:30px;
+          color:#1e293b;
+        ">
+          Certificate
+        </h1>
+
+        <p style="font-size:20px; color:#475569;">
+          This certificate is proudly presented to
+        </p>
+
+        <h2 style="
+          font-size:54px;
+          margin:40px 0;
+          font-weight:800;
+          color:#1e3a8a;
         ">
           ${certificate.fullName}
-        </div>
+        </h2>
 
-        <div style="
-          position:absolute;
-          top:400px;
-          left:50%;
-          transform:translateX(-50%);
-          font-size:26px;
+        <p style="font-size:20px; color:#475569;">
+          for successfully completing
+        </p>
+
+        <h3 style="
+          font-size:28px;
+          margin-top:20px;
+          font-weight:600;
+          color:#0f172a;
         ">
           ${certificate.courseName}
-        </div>
+        </h3>
 
         <div style="
           position:absolute;
-          bottom:90px;
-          left:120px;
+          bottom:50px;
+          left:80px;
           font-size:16px;
+          color:#64748b;
         ">
-          ${new Date(certificate.issuedAt).toLocaleDateString()}
+          Issued: ${new Date(certificate.issuedAt).toLocaleDateString()}
         </div>
 
         <div style="
           position:absolute;
-          bottom:90px;
-          right:120px;
+          bottom:50px;
+          right:80px;
           font-size:14px;
+          color:#64748b;
         ">
           ${certificate.certificateNo}
         </div>
 
-      </body>
-    </html>
-    `;
+      </div>
+    </body>
+  </html>
+  `;
   }
 
   async generatePdf(id: number) {

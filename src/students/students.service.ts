@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, UseGuards } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserSelect } from '../users/utils/users.select';
@@ -7,7 +7,9 @@ import { mappedUsers } from '../common/helpers/user-map';
 import { buildQuery } from '../common/query/query.helper';
 import type { CurrentUserType } from '../common/types/current-user.type';
 import { UpdateStudentDto } from './dto/update-student.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Injectable()
 export class StudentsService {
   constructor(private prisma: PrismaService) {}

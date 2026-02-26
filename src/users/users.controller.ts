@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Param,
   ParseIntPipe,
   Patch,
@@ -19,6 +20,7 @@ import { CurrentUser } from '../auth/current-user';
 import type { CurrentUserType } from '../common/types/current-user.type';
 import * as currentUserType from '../common/types/current-user.type';
 import { ChangePasswordDto } from './dto/change-password.dto';
+
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
@@ -38,6 +40,12 @@ export class UsersController {
     return this.usersService.getAll(query, user);
   }
 
+  @Header(
+    'Cache-Control',
+    'no-store, no-cache, must-revalidate, proxy-revalidate',
+  )
+  @Header('Pragma', 'no-cache')
+  @Header('Expires', '0')
   @Get('me')
   async me(@Req() req: any) {
     return this.usersService.findById(req.user.id);

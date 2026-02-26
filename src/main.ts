@@ -33,8 +33,13 @@ async function bootstrap() {
     new ContextInterceptor(),
     new ResponseInterceptor(),
   );
+
   app.enableCors({
-    origin: ['https://lms-nine-mu.vercel.app', 'http://localhost:3000'],
+    origin: [
+      'https://lms-nine-mu.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:8081',
+    ],
     credentials: true,
   });
 
